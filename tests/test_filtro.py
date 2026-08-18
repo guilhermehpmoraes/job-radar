@@ -22,8 +22,8 @@ virar asserção, não deduzido lendo o comentário.
 
 import pytest
 
-from job import Job, extrair_escopo_remoto
-from perfis import PERFIL_BR, PERFIL_INTL
+from core.job import Job, extrair_escopo_remoto
+from core.perfis import PERFIL_BR, PERFIL_INTL
 
 
 # ---------------------------------------------------------------------------
@@ -47,6 +47,17 @@ CASOS_ESCOPO = [
     # UF que não colide com sigla americana resolve direto, sem precisar
     # olhar a cidade.
     ("uf-nao-ambigua-resolve-direto", "Remoto (Recife, PE)", "", {"Brasil"}),
+
+    # --- MEDIDO em produção (jobradar.log real): card do LinkedIn às vezes
+    # separa cidade e UF com hífen em vez de vírgula ("São Paulo - SP") —
+    # sem tratar isso, `resto` não quebrava em segmento nenhum e a UF nunca
+    # era comparada contra _SIGLAS_UF_BRASIL (ver MEDIDO em job.py). Vaga
+    # remota brasileira real virava "escopo desconhecido" e era descartada.
+    ("hifen-sao-paulo-sem-parenteses", "São Paulo - SP", "Remoto", {"Brasil"}),
+    ("hifen-fortaleza-sem-parenteses", "Fortaleza - CE", "Remoto", {"Brasil"}),
+    # UF ambígua com separador hífen também precisa desambiguar pela
+    # capital, igual ao caso com vírgula acima.
+    ("hifen-uf-ambigua-sc-florianopolis", "Florianópolis - SC", "Remoto", {"Brasil"}),
 
     # --- "Porto Alegre"/"Santiago do Cacém" virando Portugal/Chile por
     # substring (a chave batia dentro do nome da cidade brasileira/

@@ -4,7 +4,11 @@ from urllib.parse import quote_plus
 
 from playwright.sync_api import sync_playwright
 
-from core.config import LOCATIONS_LINKEDIN, LOCATIONS_LINKEDIN_REMOTO_APENAS
+from core.config import (
+    LOCATIONS_LINKEDIN,
+    LOCATIONS_LINKEDIN_CIDADES_PRESENCIAL,
+    LOCATIONS_LINKEDIN_REMOTO_APENAS,
+)
 from core.job import Job, _e_remoto, _normalizar, extrair_data_publicacao
 from core.logger import get_logger
 from scrapers.base import BaseScraper
@@ -28,6 +32,15 @@ MAX_PAGINAS = 3
 # Menos páginas que a passada nacional pra não dobrar o custo do scraper —
 # volume de vaga remota tende a ser menor que o total nacional por termo.
 MAX_PAGINAS_REMOTO = 2
+
+# Terceira passada, uma por cidade de LOCATIONS_LINKEDIN_CIDADES_PRESENCIAL
+# (ver MEDIDO em config.py — a passada nacional não alcança cidade menor
+# quando o termo é concorrido em SP/RJ/MG). 1 página só: essas cidades têm
+# volume baixo por termo (mercado menor que capital), 10 resultados por
+# cidade por termo já cobre a esmagadora maioria — e multiplicar por 11
+# cidades já é o triplo de requisições da passada nacional sozinha, então
+# manter enxuto aqui é o que evita esse custo virar desproporcional.
+MAX_PAGINAS_CIDADE = 1
 
 
 class LinkedInScraper(BaseScraper):
@@ -61,9 +74,18 @@ class LinkedInScraper(BaseScraper):
     nunca bateria em CIDADES, que é só cidade brasileira). Roda só a passada
     f_WT=2 pra esses países.
 
-    Cada país em qualquer uma das duas listas multiplica o número de buscas
-    — defaults (ver LOCATIONS_LINKEDIN/LOCATIONS_LINKEDIN_REMOTO_APENAS em
-    config.py) começam enxutos de propósito.
+    `locations_cidades_presencial`: uma cidade por busca (só passada
+    nacional, sem f_WT=2) pras cidades de CIDADES em config.py — existe
+    porque a passada nacional acima (location="Brasil") não alcança essas
+    cidades quando o termo é concorrido em SP/RJ/MG (MEDIDO ao vivo: 3
+    páginas de "analista de dados" em Brasil inteiro vieram só de capital
+    grande). Busca por cidade específica não depende de volume nacional —
+    o próprio location= do LinkedIn já restringe à cidade.
+
+    Cada país/cidade em qualquer uma das três listas multiplica o número de
+    buscas — defaults (ver LOCATIONS_LINKEDIN/LOCATIONS_LINKEDIN_REMOTO_
+    APENAS/LOCATIONS_LINKEDIN_CIDADES_PRESENCIAL em config.py) começam
+    enxutos de propósito.
     """
 
     def __init__(
@@ -71,6 +93,7 @@ class LinkedInScraper(BaseScraper):
         termos_busca: list[str],
         locations: list[str] | None = None,
         locations_remoto_apenas: list[str] | None = None,
+        locations_cidades_presencial: list[str] | None = None,
     ):
         self.termos_busca = termos_busca
         self.locations = locations if locations is not None else LOCATIONS_LINKEDIN
@@ -78,6 +101,11 @@ class LinkedInScraper(BaseScraper):
             locations_remoto_apenas
             if locations_remoto_apenas is not None
             else LOCATIONS_LINKEDIN_REMOTO_APENAS
+        )
+        self.locations_cidades_presencial = (
+            locations_cidades_presencial
+            if locations_cidades_presencial is not None
+            else LOCATIONS_LINKEDIN_CIDADES_PRESENCIAL
         )
 
     def buscar_vagas(self) -> list[Job]:
@@ -88,17 +116,33 @@ class LinkedInScraper(BaseScraper):
                 vagas.extend(self._buscar_termo(termo, location, remoto=True))
             for location in self.locations_remoto_apenas:
                 vagas.extend(self._buscar_termo(termo, location, remoto=True))
+            for location in self.locations_cidades_presencial:
+                vagas.extend(self._buscar_termo(
+                    termo, location, remoto=False,
+                    max_paginas=MAX_PAGINAS_CIDADE, rotulo="cidade",
+                ))
 
-        total_mercados = len(self.locations) + len(self.locations_remoto_apenas)
+        total_mercados = (
+            len(self.locations) + len(self.locations_remoto_apenas)
+            + len(self.locations_cidades_presencial)
+        )
         logger.info(
             f"[LinkedIn] {len(vagas)} vaga(s) encontrada(s) no total "
             f"({total_mercados} mercado(s): {', '.join(self.locations)} [completo] + "
-            f"{', '.join(self.locations_remoto_apenas)} [remoto apenas])"
+            f"{', '.join(self.locations_remoto_apenas)} [remoto apenas] + "
+            f"{len(self.locations_cidades_presencial)} cidade(s) [presencial/híbrido])"
         )
         return vagas
 
-    def _buscar_termo(self, termo: str, location: str, remoto: bool) -> list[Job]:
-        tag = f"{location}, remoto (f_WT=2)" if remoto else f"{location}, nacional"
+    def _buscar_termo(
+        self,
+        termo: str,
+        location: str,
+        remoto: bool,
+        max_paginas: int | None = None,
+        rotulo: str = "nacional",
+    ) -> list[Job]:
+        tag = f"{location}, remoto (f_WT=2)" if remoto else f"{location}, {rotulo}"
         logger.info(f"[LinkedIn] Buscando ({tag}): {termo}")
         vagas: list[Job] = []
         # quote_plus em vez de .replace(" ", "+") manual: termo (ou location)
@@ -107,7 +151,8 @@ class LinkedInScraper(BaseScraper):
         # silenciosamente.
         termo_url = quote_plus(termo)
         location_url = quote_plus(location)
-        max_paginas = MAX_PAGINAS_REMOTO if remoto else MAX_PAGINAS
+        if max_paginas is None:
+            max_paginas = MAX_PAGINAS_REMOTO if remoto else MAX_PAGINAS
 
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)

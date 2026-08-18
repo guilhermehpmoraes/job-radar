@@ -513,7 +513,22 @@ def extrair_escopo_remoto(texto_local: str, modalidade: str = "") -> set[str]:
     # antes dela. Checa todo segmento separado por vírgula que NÃO seja o
     # primeiro (o primeiro é sempre a cidade nesse formato, nunca a sigla)
     # — ver comentário de _SIGLAS_ESTADOS_EUA acima.
-    segmentos = [s.strip(" .") for s in resto.split(",")]
+    #
+    # MEDIDO em produção (jobradar.log real, perfil Brasil): o card do
+    # LinkedIn às vezes separa cidade e UF com hífen ("São Paulo - SP",
+    # "Pelotas - RS", "Fortaleza - CE") em vez de vírgula — mesmo formato
+    # "Cidade, SIGLA", separador diferente (confirmado ao vivo que o
+    # próprio LinkedIn também usa vírgula em outros cards; os dois
+    # formatos coexistem). Sem tratar hífen/travessão aqui, `resto` nunca
+    # quebrava em segmentos (split(",") devolvia UM item só, o texto
+    # inteiro com o hífen dentro) — a sigla nunca chegava a ser comparada
+    # contra _SIGLAS_UF_BRASIL, e a vaga remota brasileira inteira virava
+    # "escopo desconhecido" (candidato = "sao paulo - sp" literal) e era
+    # descartada. Achado ao investigar pergunta direta da usuária sobre
+    # cobertura de busca: um único ciclo do log real tinha 12 vagas
+    # brasileiras (São Paulo, Pelotas, Campinas, Fortaleza, Salvador,
+    # Campo Grande) descartadas só por esse motivo.
+    segmentos = [s.strip(" .") for s in re.split(r"[,\-–—]", resto)]
     cidade = segmentos[0] if segmentos else ""
     for seg in segmentos[1:]:
         # UF brasileira primeiro: só as 6 ambíguas (colidem com sigla dos

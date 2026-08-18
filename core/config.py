@@ -226,6 +226,19 @@ LOCATIONS_LINKEDIN = ["Brasil"]
 # como já visto com "LATAM"/"Latin America").
 LOCATIONS_LINKEDIN_REMOTO_APENAS = ["Argentina", "Chile", "México", "Colômbia", "Espanha", "Portugal"]
 
+# MEDIDO: a passada nacional acima (location="Brasil") varre o país inteiro
+# e só sobra o que bate em CIDADES depois do filtro — pra termo concorrido
+# em SP/RJ/MG (a maioria), as 3 páginas (30 resultados) nunca chegam numa
+# vaga de cidade menor do Nordeste, porque o volume dos polos maiores
+# ocupa tudo antes. Testado ao vivo: página 1 de "analista de dados" em
+# Brasil inteiro veio 100% São Paulo/Curitiba/Brasília, nenhuma do
+# Nordeste. Busca ESPECÍFICA por cidade não depende de volume nacional —
+# o próprio location= do LinkedIn já restringe o resultado à cidade, então
+# funciona mesmo quando SP/RJ dominam o termo. "Remoto" (item de CIDADES)
+# não é local de busca de verdade — sai da lista, já coberto pela passada
+# remoto=True de LOCATIONS_LINKEDIN acima.
+LOCATIONS_LINKEDIN_CIDADES_PRESENCIAL = [c for c in CIDADES if c != "Remoto"]
+
 # Mercado que a vaga remota precisa aceitar pra contar, quando o texto de
 # local DECLARA um escopo geográfico ("Remote — US only", "Remote — India").
 # Ver Job.escopo_remoto/RegrasFiltro.mercados_remoto_aceitos em job.py — sem
