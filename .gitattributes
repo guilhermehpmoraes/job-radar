@@ -1,0 +1,2 @@
+# O banco contém o histórico local de vagas; merges do upstream preservam nossa cópia.
+data/jobs.db merge=keepLocalDb
