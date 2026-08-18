@@ -95,6 +95,37 @@ def _modalidade_pelo_titulo(titulo: str) -> str | None:
     return None
 
 
+_FLAGS_REMOTO = ("remoto", "remota", "remote")
+
+
+def _confirma_remoto(modalidade_norm: str, local_norm: str) -> bool:
+    """A vaga e remota?
+
+    Caminho principal: o campo `modalidade`, preenchido pelo scraper na
+    extracao. E o caminho certo -- detectar uma vez, na fonte, em vez de
+    reparsear texto a cada chamada de combina_com().
+
+    MEDIDO: exigir SO o campo criava falso negativo em toda fonte que nao
+    expoe modalidade no card. Confirmado em teste: local="Home Office" com
+    modalidade="" era REJEITADA no perfil Brasil, e o mesmo vale pra
+    "100% Remoto", "Trabalhe de casa" e "Teletrabajo" escritos no campo de
+    local. Todo o vocabulario de TERMOS_REMOTO existe exatamente pra
+    reconhecer isso e tinha ficado inalcancavel nesse caminho.
+
+    Fallback so quando `modalidade` esta VAZIA (fonte nao informou) -- nunca
+    sobrepoe uma modalidade que a fonte declarou. Vaga marcada "Hibrido"
+    ou "Presencial" continua nao sendo remota, mesmo com a palavra
+    "remoto" solta no texto do local.
+
+    Le so `local`, nunca o titulo. Concatenar os dois foi o bug original
+    desta base: vaga americana com "Hybrid Remote" no TITULO batia "remot"
+    e passava como remota, com local="Bloomington, IN".
+    """
+    if modalidade_norm in ("remoto", "remota"):
+        return True
+    return not modalidade_norm and _e_remoto(local_norm)
+
+
 # MEDIDO: "Remote — US only", "Remote — India", "Remote — Portugal" e
 # "Remote — Brazil only" passavam TODOS igual no filtro, porque _e_remoto()
 # só confirma que existe a raiz "remot" e para de ler ali — não olha o que
@@ -1102,9 +1133,8 @@ class Job:
         # EUA. Tratando "remote" como flag de remoto (igual "remoto"), ele
         # passa pelo mesmo caminho de bate_remoto/escopo que "remoto" já
         # passava, em vez de furar o filtro por um atalho.
-        _FLAGS_REMOTO = ("remoto", "remota", "remote")
         quer_remoto = any(_normalizar(c) in _FLAGS_REMOTO for c in regras.cidades)
-        bate_remoto = quer_remoto and modalidade_norm in ("remoto", "remota")
+        bate_remoto = quer_remoto and _confirma_remoto(modalidade_norm, local_norm)
 
         # Calculado uma vez só e reaproveitado nos dois gates abaixo
         # (mercado aceito e idioma exigido) — os dois leem o mesmo escopo.
@@ -1279,9 +1309,8 @@ class Job:
         if regras.mercados_remoto_aceitos is None:
             return None
         modalidade_norm = _normalizar(self.modalidade)
-        _FLAGS_REMOTO = ("remoto", "remota", "remote")
         quer_remoto = any(_normalizar(c) in _FLAGS_REMOTO for c in regras.cidades)
-        if not (quer_remoto and modalidade_norm in ("remoto", "remota")):
+        if not (quer_remoto and _confirma_remoto(modalidade_norm, _normalizar(self.local))):
             return None
         escopos = self.escopo_remoto
         if not escopos:
