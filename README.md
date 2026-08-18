@@ -20,7 +20,7 @@
 
 ## 💎 Proposta de valor
 
-> Em cidade pequena, vaga boa de desenvolvimento aparece pouco e some rápido — quem checa o board duas vezes por dia perde pra quem checou na primeira hora. **JobRadar** é um sistema de monitoramento contínuo voltado a vagas FullStack, Backend, Frontend React e DevOps: varre **8 fontes** a cada **3 horas**, filtra por cargo/cidade/mercado/idioma com três níveis de confiança, pontua cada vaga por relevância e notifica no Telegram — rodando de graça, sem servidor próprio, 24 horas por dia.
+> Em cidade pequena, vaga boa de desenvolvimento aparece pouco e some rápido — quem checa o board duas vezes por dia perde pra quem checou na primeira hora. **JobRadar** é um sistema de monitoramento contínuo voltado a vagas FullStack, Backend, Frontend React e DevOps: varre **8 fontes** a cada **hora**, filtra por cargo/cidade/mercado/idioma com três níveis de confiança, pontua cada vaga por relevância e notifica no Telegram — rodando de graça, sem servidor próprio, 24 horas por dia.
 
 ## 📄 Resumo executivo
 
@@ -32,7 +32,7 @@ Entre 07 e 15 de agosto, o sistema já processou **1.052 vagas únicas**, sem in
 | 🔗 Concentração numa única fonte (LinkedIn) | **89,5%** |
 | 🧪 Testes automatizados (CI a cada push) | **73** |
 | 🌎 Fontes monitoradas em paralelo | **8** |
-| ⏱️ Frequência de checagem | **a cada 3h** |
+| ⏱️ Frequência de checagem | **a cada hora** |
 | 💰 Custo de infraestrutura | **R$ 0** |
 
 A concentração em LinkedIn é um risco medido, não ignorado: o endpoint usado não é oficial e o próprio código documenta a chance de bloqueio — por isso parte do trabalho recente foi medir o rendimento de cada fonte secundária e paginar mais fundo nelas, em vez de só empilhar fonte nova.
@@ -97,7 +97,7 @@ obradar/
 ├── data/
 │ └── jobs.db ← banco versionado (histórico de dedup)
 └── .github/workflows/
-├── jobradar.yml ← cron de produção (a cada 3h)
+├── jobradar.yml ← cron de produção (a cada hora)
 └── testes.yml ← CI
 
 ## 💻 Como rodar
@@ -113,7 +113,7 @@ python -m playwright install chromium
 Criar `.env` na raiz com `TELEGRAM_BOT_TOKEN` e `TELEGRAM_CHAT_ID` (via [@BotFather](https://t.me/BotFather)), depois:
 
 ```bash
-python main.py --perfil brasil internacional --once
+python main.py --perfil brasil --once
 ```
 
 ## 🧪 Testes

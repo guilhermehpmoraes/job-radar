@@ -2,7 +2,9 @@ name: JobRadar
 
 on:
   schedule:
-    - cron: "0 */3 * * *"
+    # Uma vez por hora, fora do minuto 0 (horário de maior congestionamento
+    # dos runners agendados do GitHub Actions).
+    - cron: "17 * * * *"
   workflow_dispatch: {}
 
 concurrency:
@@ -15,16 +17,11 @@ permissions:
 jobs:
   buscar-vagas:
     runs-on: ubuntu-latest
-    # Sem isso, o padrão do GitHub Actions é 6h (360min) — uma fonte travada
-    # (ex: Catho com timeout de anti-bot, ou LinkedIn rate-limitado)
-    # consumiria até 6h de cada vez. Com concurrency.cancel-in-progress:
-    # false, um run travado também bloqueia o próximo ciclo inteiro, porque
-    # o run seguinte fica na fila esperando o anterior liberar o grupo. 150
-    # min dá folga real sobre a duração medida do ciclo (~1h30-2h com toda a
-    # paginação e a passada dupla do LinkedIn) e ainda fica abaixo do
-    # intervalo do cron (3h), então um run truncado nunca empilha em cima
-    # do próximo agendado.
-    timeout-minutes: 150
+    # O perfil Brasil leva em torno de 7-12 min nas execuções medidas. Este
+    # limite ainda dá folga para lentidão das fontes, mas encerra um ciclo
+    # travado antes do próximo disparo horário. cancel-in-progress=false
+    # preserva o ciclo atual e evita perder o estado do banco no meio dele.
+    timeout-minutes: 55
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v4
@@ -39,16 +36,11 @@ jobs:
           pip install -r requirements.txt
           python -m playwright install --with-deps chromium
 
-      - name: Rodar JobRadar (um ciclo de cada perfil)
+      - name: Rodar JobRadar (um ciclo do perfil Brasil)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        # Antes disso só o perfil Brasil rodava aqui — main_intl.py existia
-        # no repositório mas nunca foi chamado pelo workflow, então o
-        # pipeline internacional nunca rodou de verdade em produção. Agora é
-        # um projeto só com dois perfis selecionáveis (ver core/perfis.py); os
-        # dois rodam na mesma execução/commit, um após o outro.
-        run: python main.py --perfil brasil internacional --once
+        run: python main.py --perfil brasil --once
 
       - name: Salvar vagas já vistas (evita notificação duplicada)
         run: |

@@ -300,8 +300,8 @@ LIMIAR_DIGEST_IMEDIATO = 7
 
 # Hora UTC em que o digest diário dispara (uma vez por perfil, por dia —
 # ver _enviar_digest_diario). 0 = meia-noite UTC = 21h em Brasília (UTC-3).
-# O cron do workflow (0 */3 * * *) já passa por essa hora exata todo dia,
-# então não precisa de agendamento à parte.
+# O cron horário do workflow passa por essa faixa todos os dias, então não
+# precisa de agendamento à parte.
 DIGEST_HORA_UTC = 0
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")

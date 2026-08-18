@@ -288,7 +288,7 @@ def definir_feedback(job_id: str, feedback: str):
 def obter_vagas_pendentes_digest(perfil_chave: str) -> list[tuple]:
     """Vagas salvas com digest_pendente=1 pra esse perfil, da mais
     relevante pra menos — ver _enviar_digest_diario em main.py. Pode
-    acumular de mais de um ciclo (a cada 3h) até bater o horário do envio,
+    acumular de mais de um ciclo (a cada hora) até bater o horário do envio,
     e também sobrevive se o envio de um dia falhar (Telegram fora do ar):
     fica pendente e entra no digest seguinte, nunca é descartada."""
     with _conectar() as conn:

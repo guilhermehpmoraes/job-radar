@@ -254,7 +254,7 @@ _OFFSET_CHAVE = "telegram_update_offset"
 
 def processar_feedback_pendente():
     """Consome os cliques em 👍/👎 desde o último ciclo. Sem webhook, sem
-    servidor próprio — o cron de 3 em 3 horas do projeto (ver
+    servidor próprio — o cron horário do projeto (ver
     .github/workflows/jobradar.yml) já FAZ o papel de polling: cada
     execução pergunta ao Telegram "o que mudou desde a última vez que eu
     perguntei" via getUpdates, processa, e segue pro ciclo de busca normal.
