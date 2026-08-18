@@ -75,8 +75,8 @@ def _e_remoto(texto: str) -> bool:
 # confiar cegamente em fonte com filtro nativo de remoto (f_WT=2 do
 # LinkedIn) quando ela diverge do próprio anúncio. MEDIDO em produção: 1
 # de 81 vagas internacionais veio com modalidade=Remoto (via f_WT=2, o
-# LinkedIn classificou como remota) mas o título dizia "Data Analyst
-# (Analista de Datos) - Hybrid" — o filtro do próprio LinkedIn às vezes
+# LinkedIn classificou como remota) mas o título dizia "Backend Developer
+# - Hybrid" — o filtro do próprio LinkedIn às vezes
 # diverge do anúncio real. Como o perfil internacional só quer remoto de
 # verdade, o título vence quando contradiz a classificação da fonte.
 _TERMOS_TITULO_HIBRIDO = ["hybrid", "hibrido"]
@@ -803,7 +803,7 @@ class RegrasFiltro:
     """Agrupa as 6 regras que Job.combina_com() usa pra decidir se uma vaga
     bate ou não. Antes eram 6 parâmetros posicionais soltos, atravessando
     job.py -> utils/filtro.py -> main.py/main_intl.py — cada regra nova
-    (já foram 6: forte, ambíguo, qualificador de dados, ferramenta,
+    (já foram 6: forte, ambíguo, qualificador de stack, ferramenta,
     qualificador de cargo, cidade) alongava a lista de posições, e trocar a
     ordem de dois argumentos do mesmo tipo (duas list[str] quaisquer) não dá
     erro nenhum, só passa a filtrar errado em silêncio — nada no Python
@@ -815,7 +815,7 @@ class RegrasFiltro:
     """
     keywords_forte: list[str]
     keywords_ambiguo: list[str]
-    qualificadores_dados: list[str]
+    qualificadores_stack: list[str]
     ferramentas_titulo: list[str]
     qualificadores_cargo: list[str]
     cidades: list[str]
@@ -827,9 +827,9 @@ class RegrasFiltro:
     # escopo declarado", rejeitando todo mercado explícito.
     mercados_remoto_aceitos: list[str] | None = None
     # MEDIDO: perfil internacional não exigia espanhol/português na vaga em
-    # si — só nos TERMOS de busca (ex: "data analyst spanish speaker"), que
-    # nunca eram checados de novo depois. "Senior Data Analyst"/"Data
-    # Analyst" remoto e sem mercado declarado passava sem nenhuma relação
+    # si — só nos TERMOS de busca (ex: "backend developer spanish speaker"),
+    # que nunca eram checados de novo depois. Uma vaga genérica de software
+    # remoto e sem mercado declarado passava sem nenhuma relação
     # com o idioma, porque o resultado bateu no termo de busca (que casa
     # contra o anúncio inteiro, não só o título que a gente guarda) sem que
     # "spanish"/"portuguese"/"latam" apareça em nada que sobra depois.
@@ -1076,14 +1076,11 @@ class Job:
         de acentuação entre o texto do site e o que está no config.py.
 
         Cargo tem duas regras diferentes:
-        - keywords_forte: só existe mesmo em vaga de dados/BI, basta bater no
-          título.
-        - keywords_ambiguo: também é usado em vaga de outra área (ex:
-          "Business Analyst" existe em RH, finanças etc.) — só conta se o
-          título TAMBÉM tiver um dos qualificadores (ex: "dados", "sql",
-          "power bi"). É o que permite ir adicionando cargo adjacente
-          (Product Analyst, CRM Analyst, Marketing Analyst) sem cada um virar
-          fonte de ruído sozinho.
+        - keywords_forte: identifica diretamente uma função de desenvolvimento
+          aderente ao perfil (FullStack, Backend, Software, Frontend, DevOps).
+        - keywords_ambiguo: também pode representar uma função mais funcional
+          (ex: "Analista de Sistemas") — só conta se o título TAMBÉM tiver um
+          qualificador da stack (ex: "Node.js", "TypeScript", "React").
         """
         return self._avaliar(regras).aprovada
 
@@ -1103,7 +1100,7 @@ class Job:
             _normalizar(k) in titulo_norm for k in regras.keywords_ambiguo
         ) and any(
             _contem_termo(_normalizar(q), titulo_norm, aceitar_plural=True)
-            for q in regras.qualificadores_dados
+            for q in regras.qualificadores_stack
         )
 
         # Espelho da regra acima: ferramenta no título só vale com cargo junto.
@@ -1164,8 +1161,8 @@ class Job:
                 if not (escopos_norm & mercados_aceitos_norm):
                     bate_remoto = False
 
-        # MEDIDO: "Senior Data Analyst"/"Data Analyst" remoto, sem mercado
-        # declarado, passava sem nenhuma relação com espanhol/português —
+        # Vaga de software remota, sem mercado declarado, não pode passar sem
+        # nenhuma relação explícita com espanhol/português —
         # a exigência de idioma vivia só no termo de busca, nunca era
         # reconferida aqui. Análogo a keywords_ambiguo: escopo que já é
         # país hispanofalante/lusófono aceito É o sinal de idioma (não
@@ -1207,7 +1204,8 @@ class Job:
         - Cargo no título: 3 se bateu keyword forte, 2 se bateu só o par
           ambíguo+qualificador, 0 se só bateu por ferramenta (sem cargo
           nenhum no título).
-        - Ferramenta no título (Power BI, SQL, Python...): 2.
+        - Tecnologia no título (Node.js, JavaScript, TypeScript, NestJS,
+          React, Docker ou AWS): 2.
         - Senioridade: Júnior/Pleno (prioridade do usuário) = +2; título
           sem nível classificável = +1 (não penaliza por falta de
           informação); Sênior/Especialista/Liderança = -2 (MEDIDO: 25% da
@@ -1268,11 +1266,11 @@ class Job:
 
         Sinal de cargo (sempre um dos três — bate_keyword exige pelo menos
         um pra aprovar), mesma prioridade de pontuar_relevancia:
-        - "Cargo forte": bateu keyword inequívoca de dados/BI.
-        - "Cargo ambíguo + qualificador": cargo genérico (ex: "Business
-          Analyst") só aprovado por causa do qualificador junto.
-        - "Ferramenta + cargo": aprovou por ferramenta no título (ex:
-          "Power BI"), não por palavra de cargo.
+        - "Cargo forte": bateu keyword inequívoca de desenvolvimento.
+        - "Cargo ambíguo + qualificador": cargo genérico (ex: "Analista de
+          Sistemas") só aprovado por causa do qualificador junto.
+        - "Ferramenta + cargo": aprovou por tecnologia no título (ex:
+          "Node.js Developer"), não por uma keyword forte completa.
 
         Mais " · idioma sem mercado" quando a vaga é remota, o texto não
         declarou mercado nenhum, e só passou no gate de geografia porque o

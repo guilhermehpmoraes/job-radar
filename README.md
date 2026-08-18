@@ -3,7 +3,7 @@
 <!-- ![JobRadar](assets/cover.png) -->
 
 # 📡 JobRadar
-### Monitor Automatizado de Vagas de Dados & BI
+### Monitor Automatizado de Vagas FullStack, Backend e DevOps
 
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-Scraping-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)
@@ -20,7 +20,7 @@
 
 ## 💎 Proposta de valor
 
-> Em cidade pequena, vaga boa de Dados/BI aparece pouco e some rápido — quem checa o board duas vezes por dia perde pra quem checou na primeira hora. **JobRadar** é um sistema de monitoramento contínuo que substitui essa checagem manual: varre **8 fontes** a cada **3 horas**, filtra por cargo/cidade/mercado/idioma com três níveis de confiança, pontua cada vaga por relevância e notifica no Telegram — rodando de graça, sem servidor próprio, 24 horas por dia.
+> Em cidade pequena, vaga boa de desenvolvimento aparece pouco e some rápido — quem checa o board duas vezes por dia perde pra quem checou na primeira hora. **JobRadar** é um sistema de monitoramento contínuo voltado a vagas FullStack, Backend, Frontend React e DevOps: varre **8 fontes** a cada **3 horas**, filtra por cargo/cidade/mercado/idioma com três níveis de confiança, pontua cada vaga por relevância e notifica no Telegram — rodando de graça, sem servidor próprio, 24 horas por dia.
 
 ## 📄 Resumo executivo
 
@@ -70,8 +70,8 @@ Vaga de alta relevância chega na hora, com motivo da aprovação, nível e link
 
 ## 🏗️ Arquitetura técnica
 
-- **Filtro em 3 níveis de confiança:** cargo inequívoco passa sozinho; cargo ambíguo (ex: "Business Analyst") só conta com qualificador de dados junto no título; ferramenta (ex: "Power BI") só conta com palavra de cargo junto — nada aprova por palavra-chave solta.
-- **Score de relevância sem ML:** 5 sinais conhecidos (cargo, ferramenta, senioridade, mercado, idioma), pesos calibrados contra o histórico real do banco, não chutados.
+- **Filtro em 3 níveis de confiança:** cargo aderente (ex: "Full Stack Developer") passa sozinho; cargo ambíguo (ex: "Analista de Sistemas") só conta com uma tecnologia da stack no título; tecnologia (ex: "Node.js") só conta junto de uma palavra de cargo — nada aprova por palavra-chave solta.
+- **Score de relevância sem ML:** 5 sinais explícitos (cargo, tecnologia, senioridade, mercado e idioma), com bônus para a stack principal e para vagas Júnior/Pleno.
 - **Zero infraestrutura:** GitHub Actions como motor de cron, SQLite como banco — versionado no próprio Git, o histórico de vagas já vistas *é* o commit.
 - **Resiliente:** nunca marca vaga como "vista" sem confirmar que a notificação saiu; alerta automático se metade das fontes falhar num ciclo; heartbeat diário confirmando que o robô ainda está de pé.
 - **73 testes automatizados em CI:** cada caso documenta um bug real já corrigido nesta base — não é cenário hipotético, é regressão registrada.
@@ -128,6 +128,6 @@ pytest tests/ -v
 
 <div align="center">
 
-*Case de portfólio em automação de dados — Python, Playwright, SQLite, GitHub Actions e engenharia de filtro sem ML.*
+*Case de portfólio em automação — Python, Playwright, SQLite, GitHub Actions e engenharia de filtro sem ML.*
 
 </div>

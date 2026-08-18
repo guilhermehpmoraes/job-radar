@@ -11,93 +11,102 @@
 # internacional nunca vai ter o mesmo link de uma vaga brasileira).
 from core.config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, DB_PATH, CIDADES_EUROPA_IBERICA  # noqa: F401
 
-# Cargo em múltiplos idiomas — vaga internacional pode ter o anúncio escrito
-# em inglês, português ou espanhol, dependendo de quem contratou.
+# Cargos FullStack e adjacentes em inglês, português e espanhol. O foco é
+# desenvolvimento web com prioridade para backend/Node.js, sem perder vagas
+# generalistas de software, frontend React e DevOps aderentes ao perfil.
 KEYWORDS_INTL = [
-    "Data Analyst",
-    "Business Intelligence",
-    "BI Analyst",
-    "Data Analytics",
-    "Data Specialist",
-    "Analista de Dados",
-    "Business Analyst",
-    # Nomenclatura em espanhol
-    "Analista de Datos",
-    "Analítica de Datos",
-    "Analista de Inteligencia de Negocios",
-    "Especialista en Datos",
-    "Analista de Business Intelligence",
-    "Analista de Reportes",
-    # Eixo separado: Data Annotation / AI Evaluator — não é análise de
-    # dados, é rotular/avaliar dado pra treinar IA, mas é um nicho remoto
-    # que contrata muito por idioma (PT-BR/ES) e paga em dólar, então entra
-    # como categoria própria de cargo, não mistura com as de análise.
-    "Data Annotator",
-    "Data Annotation",
-    "AI Evaluator",
-    "AI Trainer",
-    "Data Labeler",
-    "Search Quality Rater",
+    # Inglês
+    "Full Stack Developer",
+    "Fullstack Developer",
+    "Full-Stack Developer",
+    "Full Stack Engineer",
+    "Fullstack Engineer",
+    "Backend Developer",
+    "Back-end Developer",
+    "Backend Engineer",
+    "Node.js Developer",
+    "NodeJS Developer",
+    "NestJS Developer",
+    "TypeScript Developer",
+    "Software Developer",
+    "Software Engineer",
+    "Web Developer",
+    "Frontend Developer",
+    "Front-end Developer",
+    "Frontend Engineer",
+    "React Developer",
+    "DevOps Engineer",
+    # Português
+    "Desenvolvedor Full Stack",
+    "Desenvolvedora Full Stack",
+    "Desenvolvedor Fullstack",
+    "Desenvolvedor Backend",
+    "Desenvolvedora Backend",
+    "Desenvolvedor Node.js",
+    "Desenvolvedor NestJS",
+    "Desenvolvedor TypeScript",
+    "Desenvolvedor de Software",
+    "Engenheiro de Software",
+    "Desenvolvedor Frontend",
+    "Desenvolvedor React",
+    "Engenheiro DevOps",
+    # Espanhol
+    "Desarrollador Full Stack",
+    "Desarrolladora Full Stack",
+    "Desarrollador Fullstack",
+    "Desarrollador Backend",
+    "Desarrolladora Backend",
+    "Desarrollador Node.js",
+    "Desarrollador NestJS",
+    "Desarrollador TypeScript",
+    "Desarrollador de Software",
+    "Ingeniero de Software",
+    "Desarrollador Web",
+    "Desarrollador Frontend",
+    "Desarrollador React",
+    "Ingeniero DevOps",
 ]
 
 # Termos de busca: cargo + sinal de idioma (português/espanhol/bilíngue) ou
-# +sinal de mercado (LATAM, Spanish Market). Não faz sentido buscar só
-# "data analyst" sozinho aqui — isso é o mundo inteiro sem filtro nenhum de
-# idioma, a maioria fora do nosso alcance.
+# +sinal de mercado (LATAM, Spanish Market). Os termos puros no fim também
+# são seguros porque cada fonte já os executa com país e modalidade remota.
 TERMOS_BUSCA_INTL = [
-    "data analyst spanish speaker",
-    "data analyst spanish speaking",
-    "data analyst portuguese speaker",
-    "data analyst portuguese speaking",
-    "bilingual data analyst spanish",
-    "bilingual data analyst portuguese",
-    "business intelligence spanish speaker",
-    "business intelligence spanish speaking",
-    "business intelligence portuguese speaker",
-    "business intelligence portuguese speaking",
-    "remote data analyst latam",
-    "remote data analyst latin america",
-    "data analyst spanish market",
-    "business intelligence spanish markets",
-    "analista de datos remoto",
-    # MEDIDO ao vivo: vaga real ("Business Analyst (Colombia) - Remote",
-    # Connect Tech+Talent) aparece em location=Colombia&f_WT=2 pro termo
-    # bare "business analyst" — testei "spanish speaker", "business
-    # intelligence spanish speaker", "remote data analyst latin america" e
-    # "latam" contra a mesma vaga, location e filtro remoto: nenhum achou
-    # (o anúncio não repete nenhuma dessas frases). O comentário original
-    # lá em cima ("não faz sentido buscar só 'data analyst' sozinho, é o
-    # mundo inteiro sem idioma") não vale AQUI: todo termo desta lista já
-    # roda escopado por país (LOCATIONS_INTL) + remoto (f_WT=2) — nunca é
-    # busca global. E o filtro de idioma pós-busca (RegrasFiltro.
-    # idiomas_exigidos) só entra em jogo quando a vaga NÃO declara mercado
-    # nenhum no texto — quando o local já é um país aceito (ex: Colômbia),
-    # o PAÍS é o sinal, dispensa achar "spanish"/"portuguese" no título
-    # (mesma regra que já vale pro resto do filtro, ver job.py). Termo de
-    # cargo puro, escopado por país aceito, é seguro e fecha o vazamento:
-    # KEYWORDS_INTL aprova "Business Analyst"/"Data Analyst"/"Business
-    # Intelligence" como cargo forte, mas nenhum dos dois primeiros nunca
-    # era BUSCADO sozinho — só entravam por acidente, dentro de uma frase
-    # combinada.
-    "business analyst",
-    "data analyst",
-    "business intelligence",
-    # Eixo Data Annotation / AI Evaluator
-    "data annotation spanish speaker",
-    "data annotation portuguese speaker",
-    "ai evaluator spanish",
-    "ai evaluator portuguese",
-    "ai trainer portuguese speaker",
-    "ai trainer spanish speaker",
-    "remote data annotator latam",
+    "full stack developer spanish speaker",
+    "full stack developer portuguese speaker",
+    "backend developer spanish speaker",
+    "backend developer portuguese speaker",
+    "node.js developer spanish speaker",
+    "node.js developer portuguese speaker",
+    "software engineer spanish speaker",
+    "software engineer portuguese speaker",
+    "devops engineer spanish speaker",
+    "devops engineer portuguese speaker",
+    "remote full stack developer latam",
+    "remote backend developer latam",
+    "node.js developer latam",
+    "typescript developer latam",
+    "desarrollador full stack remoto",
+    "desarrollador backend remoto",
+    "desarrollador node.js remoto",
+    "desenvolvedor full stack remoto",
+    "desenvolvedor backend remoto",
+    # Cargos puros, sempre escopados por país + remoto nas fontes.
+    "full stack developer",
+    "backend developer",
+    "node.js developer",
+    "nestjs developer",
+    "typescript developer",
+    "software engineer",
+    "react developer",
+    "devops engineer",
     # Termos "soltos" (idioma/mercado sem cargo emparelhado na própria
     # busca) — diferente dos de cima, que sempre combinam cargo+idioma numa
     # frase só. MEDIDO: zero ocorrência de "Spanish"/"Español"/"LATAM" como
     # termo próprio no projeto — toda vaga que anuncia a vaga com o idioma
-    # em destaque ("Spanish Speaker — Data Analytics Role", "LATAM Remote
+    # em destaque ("Spanish Speaker — Software Engineer", "LATAM Remote
     # Team") e não bate exatamente numa das frases combinadas acima ficava
     # invisível pra busca. Não é o mesmo risco do comentário lá em cima
-    # (buscar só "data analyst" sozinho, sem NENHUM filtro de idioma) — aqui
+    # (buscar só um cargo sem NENHUM filtro de idioma) — aqui
     # é o oposto, idioma sem cargo na busca, e o cargo continua sendo
     # exigido depois por KEYWORDS_INTL antes de qualquer notificação.
     "spanish speaker",
@@ -107,13 +116,10 @@ TERMOS_BUSCA_INTL = [
     "latam",
 ]
 
-# MEDIDO: filtro de cargo (KEYWORDS_INTL) nunca checou idioma — a exigência
-# de espanhol/português vivia só nos TERMOS de busca acima, que casam
-# contra o anúncio inteiro (LinkedIn/Indeed indexam a descrição toda, não
-# só o título) e nunca são reconferidos depois. Resultado: "Senior Data
-# Analyst"/"Data Analyst" remoto e sem mercado declarado passava sem
-# nenhuma palavra em comum com espanhol/português/LATAM no que a gente
-# guarda (título/empresa/local). Usado em Job.combina_com() só quando a
+# O filtro de idioma é reconferido depois da busca. Sem isso, uma vaga
+# remota genérica de desenvolvimento e sem mercado declarado poderia passar
+# apenas porque a descrição indexada pelo site continha o termo pesquisado.
+# Usado em Job.combina_com() só quando a
 # vaga é remota SEM mercado aceito declarado (ver RegrasFiltro.idiomas_
 # exigidos e comentário lá) — quando o escopo já é um país hispanofalante/
 # lusófono aceito, o país é o sinal, essa lista nem entra em jogo.
@@ -142,7 +148,7 @@ IDIOMAS_EXIGIDOS_INTL = [
 # (sufixo "_internacional"), pra não colidir com o rodízio do perfil BR.
 # Esse perfil nunca tinha rodízio antes de virar perfil de verdade (rodava a
 # lista de termos INTEIRA todo ciclo, sem custo controlado, e nem chegava a
-# rodar de fato — não estava no workflow do GitHub Actions). 27 termos x até
+# rodar de fato — não estava no workflow do GitHub Actions). Os termos x até
 # 6 países/domínios por fonte já é bastante busca; bloco de 10 mantém o
 # custo por ciclo parecido com o do perfil BR.
 TERMOS_POR_CICLO_INTL = 10
@@ -253,8 +259,8 @@ ATIVAR_EIXO_IBERICO = False
 
 # Indeed usa subdomínio por país, não parâmetro de location como o
 # LinkedIn. Confirmei ao vivo que es.indeed.com, pt.indeed.com e
-# mx.indeed.com funcionam e trazem vaga local de verdade (ex: "Analista de
-# Dados" em Lisboa, "Data Analyst" em Barcelona). co/ar/cl seguem o mesmo
+# mx.indeed.com funcionam e trazem vaga local de verdade (ex: "Software
+# Engineer" em Lisboa ou "Desarrollador Backend" em Barcelona). co/ar/cl seguem o mesmo
 # padrão de domínio mas não testei individualmente — se algum não resolver
 # como esperado, o scraper só loga 0 vagas pra aquele país, não quebra o
 # resto.

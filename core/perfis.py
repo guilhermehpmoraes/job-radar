@@ -22,7 +22,7 @@ from core.config import (
     KEYWORDS,
     KEYWORDS_CARGO_FORTE,
     KEYWORDS_CARGO_AMBIGUO,
-    QUALIFICADORES_DADOS,
+    QUALIFICADORES_STACK,
     FERRAMENTAS_TITULO,
     QUALIFICADORES_CARGO,
     CIDADES,
@@ -98,7 +98,7 @@ class Perfil:
 _REGRAS_BR = RegrasFiltro(
     keywords_forte=KEYWORDS_CARGO_FORTE,
     keywords_ambiguo=KEYWORDS_CARGO_AMBIGUO,
-    qualificadores_dados=QUALIFICADORES_DADOS,
+    qualificadores_stack=QUALIFICADORES_STACK,
     ferramentas_titulo=FERRAMENTAS_TITULO,
     qualificadores_cargo=QUALIFICADORES_CARGO,
     cidades=CIDADES,
@@ -112,7 +112,7 @@ _REGRAS_BR = RegrasFiltro(
 _REGRAS_BR_IBERIA = RegrasFiltro(
     keywords_forte=KEYWORDS_CARGO_FORTE,
     keywords_ambiguo=KEYWORDS_CARGO_AMBIGUO,
-    qualificadores_dados=QUALIFICADORES_DADOS,
+    qualificadores_stack=QUALIFICADORES_STACK,
     ferramentas_titulo=FERRAMENTAS_TITULO,
     qualificadores_cargo=QUALIFICADORES_CARGO,
     cidades=CIDADES_EUROPA_IBERICA,
@@ -178,8 +178,9 @@ PERFIL_BR = Perfil(
 
 
 # Regra primária: só remoto ("Remote"/"Remoto" em CIDADES_INTL), mercado
-# LATAM/Portugal/Espanha aceito. Sem cargo ambíguo/ferramenta ainda nesse
-# perfil — simples de propósito por ser o mais novo dos dois.
+# LATAM/Portugal/Espanha aceito. Sem cargo ambíguo neste perfil; as mesmas
+# tecnologias centrais do perfil BR entram no score e também podem confirmar
+# títulos de desenvolvimento baseados na stack.
 #
 # idiomas_exigidos: sem mercado declarado, exige espanhol/português/LATAM
 # no título (ver IDIOMAS_EXIGIDOS_INTL e comentário em RegrasFiltro) — a
@@ -188,9 +189,9 @@ PERFIL_BR = Perfil(
 _REGRAS_INTL = RegrasFiltro(
     keywords_forte=KEYWORDS_INTL,
     keywords_ambiguo=[],
-    qualificadores_dados=[],
-    ferramentas_titulo=[],
-    qualificadores_cargo=[],
+    qualificadores_stack=[],
+    ferramentas_titulo=FERRAMENTAS_TITULO,
+    qualificadores_cargo=QUALIFICADORES_CARGO,
     cidades=CIDADES_INTL,
     mercados_remoto_aceitos=MERCADOS_REMOTO_ACEITOS_INTL,
     idiomas_exigidos=IDIOMAS_EXIGIDOS_INTL,
@@ -202,9 +203,9 @@ _REGRAS_INTL = RegrasFiltro(
 _REGRAS_INTL_IBERIA = RegrasFiltro(
     keywords_forte=KEYWORDS_INTL,
     keywords_ambiguo=[],
-    qualificadores_dados=[],
-    ferramentas_titulo=[],
-    qualificadores_cargo=[],
+    qualificadores_stack=[],
+    ferramentas_titulo=FERRAMENTAS_TITULO,
+    qualificadores_cargo=QUALIFICADORES_CARGO,
     cidades=CIDADES_EUROPA_IBERICA,
 )
 

@@ -4,111 +4,138 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Cargo forte: título que só existe mesmo em vaga de dados/BI, sem
-# possibilidade real de ser outra área.
+# Cargos diretamente compatíveis com o perfil FullStack. Estes termos são
+# específicos o bastante para aprovar a vaga pelo título, sem depender de
+# uma tecnologia também estar escrita nele.
 KEYWORDS_CARGO_FORTE = [
-    "Analista de Dados",
-    "Analista BI",
-    "Analista de BI",
-    "Business Intelligence",
-    "Data Analytics",
-    "Analista de Analytics",
-    "Data Analyst",
-    "Desenvolvedor BI",
-    "Consultor BI",
-    "Analista de Inteligência de Negócios",
-    "BI Developer",
-    "BI Analyst",
-    "Analista de Reporting",
-    "Analista de Inteligência de Mercado",
-    "Analista de Indicadores",
-    "Reporting Analyst",
-    "Insights Analyst",
-    "Data Insights Analyst",
-    "MIS Analyst",
-    "Analista de MIS",
-    "Assistente de BI",
-    "Auxiliar de BI",
-    "Analista de Inteligência Comercial",
-    "Data Specialist",
-    "Data Quality Analyst",
-    "Data Intelligence Analyst",
-    "BI & Analytics Analyst",
-    "Analytics Specialist",
-    "Especialista em Dados",
-    "Analista de Planejamento e Dados",
-    # "Datos" (espanhol) não é "Dados" (português) — nenhuma keyword em
-    # português cobre título em espanhol, mesmo sendo a mesma vaga. Faz
-    # sentido aqui no pipeline BR (não só em config_intl.py) porque
-    # LinkedInScraper já busca em Argentina/Chile (ver LOCATIONS_LINKEDIN).
-    "Analista de Datos",
-    "Analítica de Datos",
+    # FullStack — foco principal do perfil
+    "Desenvolvedor Full Stack",
+    "Desenvolvedora Full Stack",
+    "Desenvolvedor Fullstack",
+    "Desenvolvedora Fullstack",
+    "Full Stack Developer",
+    "Fullstack Developer",
+    "Full-Stack Developer",
+    "Full Stack Engineer",
+    "Fullstack Engineer",
+    # Backend — maior afinidade técnica
+    "Desenvolvedor Backend",
+    "Desenvolvedora Backend",
+    "Desenvolvedor Back-end",
+    "Backend Developer",
+    "Back-end Developer",
+    "Backend Engineer",
+    # Engenharia/desenvolvimento de software em geral
+    "Desenvolvedor de Software",
+    "Desenvolvedora de Software",
+    "Software Developer",
+    "Engenheiro de Software",
+    "Engenheira de Software",
+    "Software Engineer",
+    "Desenvolvedor Web",
+    "Desenvolvedora Web",
+    "Web Developer",
+    # Frontend é aderente pela experiência com React
+    "Desenvolvedor Frontend",
+    "Desenvolvedora Frontend",
+    "Desenvolvedor Front-end",
+    "Frontend Developer",
+    "Front-end Developer",
+    "Frontend Engineer",
+    # DevOps é um eixo secundário, mas faz parte da experiência prática
+    "Engenheiro DevOps",
+    "Engenheira DevOps",
+    "DevOps Engineer",
+    "Analista DevOps",
 ]
 
-# Cargo ambíguo: título que também é usado em vaga sem nada a ver com
-# dados/BI (ex: "Business Analyst" e "Analista de Negócios" existem em
-# TI, finanças, RH, operações... qualquer área). Só conta como match se o
-# título TAMBÉM tiver um QUALIFICADORES_DADOS junto — é o que permite ir
-# adicionando cargo adjacente (Product Analyst, CRM Analyst, Marketing
-# Analyst etc.) sem cada um virar fonte de ruído sozinho.
+# Cargos que podem representar desenvolvimento ou uma função mais funcional.
+# Só aprovam quando o título também contém uma tecnologia ou área da stack.
 KEYWORDS_CARGO_AMBIGUO = [
-    "Business Analyst",
-    "Analista de Negócios",
-    "Business Analytics",
-    "Analista de Performance",
+    "Analista de Sistemas",
+    "Systems Analyst",
+    "System Analyst",
+    "Desenvolvedor de Sistemas",
+    "Desenvolvedora de Sistemas",
+    "Systems Developer",
+    "Application Developer",
 ]
 
-# Termo que precisa aparecer junto no título quando o cargo é ambíguo, pra
-# confirmar que é vaga de dados/BI e não de outra área qualquer.
-QUALIFICADORES_DADOS = [
-    "dados",
-    "data",
-    "bi",
+# Termo que confirma aderência à stack quando o cargo é ambíguo.
+QUALIFICADORES_STACK = [
+    "node",
+    "node.js",
+    "nodejs",
+    "typescript",
+    "javascript",
+    "nestjs",
+    "react",
+    "react.js",
+    "full stack",
+    "fullstack",
+    "backend",
+    "frontend",
+    "web",
+    "api",
+    "rest",
     "sql",
-    "power bi",
-    "analytics",
-    "kpi",
-    "dashboard",
-    "métricas",
-    "reporting",
-    "insights",
+    "postgresql",
+    "redis",
+    "docker",
+    "aws",
+    "devops",
+    "cloud",
 ]
 
-# Ferramenta que aparece como núcleo do título ("Analista de Power BI").
+# Tecnologia que aparece como núcleo do título ("Node.js Developer").
 # Só conta como match se o título TAMBÉM tiver uma palavra de cargo — é o
-# espelho da regra de KEYWORDS_CARGO_AMBIGUO: lá o cargo é ambíguo e pede
-# domínio, aqui a ferramenta é ambígua e pede cargo. Sem isso, "Power BI"
-# sozinho aprovaria "Power BI Senior" e "Desenvolvedor (Power BI + Python)",
-# que são vaga de desenvolvimento, não de análise.
+# espelho da regra de cargo ambíguo: a tecnologia sozinha não basta.
 FERRAMENTAS_TITULO = [
-    "Power BI",
+    "Node",
+    "Node.js",
+    "NodeJS",
+    "JavaScript",
+    "TypeScript",
+    "NestJS",
+    "React",
+    "React.js",
+    "Docker",
+    "AWS",
 ]
 
-# Palavra de cargo que confirma que a vaga de ferramenta é de análise.
-# "desenvolvedor"/"developer"/"engenheiro" ficam FORA de propósito: é o que
-# mantém vaga de dev fora do radar.
+# Palavra de cargo que confirma que a tecnologia faz parte do título de uma
+# vaga de desenvolvimento, evitando aprovar cursos e funções não técnicas.
 QUALIFICADORES_CARGO = [
-    "analista",
-    "analyst",
-    "especialista",
-    "specialist",
-    "consultor",
-    "consultant",
+    "desenvolvedor",
+    "desenvolvedora",
+    "developer",
+    "engenheiro",
+    "engenheira",
+    "engineer",
+    "programador",
+    "programadora",
+    "programmer",
+    "software",
+    "full stack",
+    "fullstack",
+    "backend",
+    "frontend",
+    "devops",
 ]
 
 KEYWORDS = KEYWORDS_CARGO_FORTE + KEYWORDS_CARGO_AMBIGUO
 
 # Termos de busca enviados a cada site. Ficam separados das KEYWORDS de
 # propósito: TERMOS_BUSCA é a rede ampla (o que é pesquisado em cada site,
-# incluindo termos de ferramenta/stack pra achar vaga com título atípico),
-# enquanto KEYWORDS é o filtro final e só olha o título da vaga já
-# encontrada. Um termo de ferramenta (ex: "dax") só resulta em notificação
-# se o TÍTULO da vaga também bater com uma keyword de cargo — isso evita
-# falso positivo de vaga que só cita a ferramenta como diferencial.
+# incluindo termos de tecnologia/stack pra achar vaga com título atípico),
+# enquanto as regras de cargo são o filtro final e só olham o título da vaga
+# já encontrada. Um termo de tecnologia (ex: "redis") só resulta em
+# notificação se o TÍTULO também trouxer cargo aderente — isso evita falso
+# positivo de vaga que só cita a ferramenta como diferencial.
 #
 # TERMOS_CARGO é derivado direto de KEYWORDS (em vez de mantido à mão em
 # lista separada) — antes as duas listas divergiam: metade das KEYWORDS
-# (ex: "Desenvolvedor BI", "BI Analyst", "Analista de Negócios") nunca era
+# (ex: "Backend Developer" ou "Software Engineer") nunca seria
 # buscada de verdade, só existia como filtro, então só pegava essas vagas
 # por sorte via outro termo. Com a derivação automática isso não pode mais
 # acontecer — toda keyword nova em KEYWORDS já vira busca também.
@@ -116,34 +143,40 @@ TERMOS_CARGO_EXTRA = [
     # termos mais amplos que a keyword exata, mantidos por dar rede mais
     # larga na busca (a keyword em si é mais restrita, de propósito, pra
     # não gerar falso positivo no filtro de título).
-    "power bi",
-    "inteligência de mercado",
+    "full stack",
+    "fullstack",
+    "backend node.js",
+    "desenvolvedor node.js",
+    "desenvolvedor typescript",
+    "desenvolvedor nestjs",
+    "desenvolvedor react",
 ]
 
 TERMOS_CARGO = sorted(set(k.lower() for k in KEYWORDS) | set(TERMOS_CARGO_EXTRA))
 
-# MEDIDO em jobradar.log (12 rodízios completos, Gupy+99Jobs+GeekHunter+
-# Solides): "dax" e "power query" nunca resultaram em nenhuma vaga nova
-# notificada nessas 4 fontes — 0 em 48 buscas cada, a maioria vazia
-# ("0 resultados reais") e o resto timeout. "microsoft fabric" teve 1 vaga
-# no log inteiro (363 notificações) com o termo no título, e essa vaga
-# também tinha "Power BI"/"Analista de BI" no título — já seria achada por
-# termo que continua na lista. Timeout: os 3 termos concentraram metade
-# (13 de 26) dos timeouts dessas 4 fontes sendo só 3 dos 42 termos (7%) —
-# confirma o padrão relatado. Removidos por render zero e custarem sessão
-# igual a um termo de cargo.
+# Tecnologias centrais do perfil. Elas ampliam a descoberta porque alguns
+# portais pesquisam também na descrição; o filtro final continua exigindo um
+# cargo aderente no título.
 TERMOS_FERRAMENTA = [
-    "sql",
-    "python",
-    "tableau",
-    "qlik",
-    "looker",
-    "bigquery",
+    "node.js",
+    "javascript",
+    "typescript",
+    "nestjs",
+    "react",
+    "postgresql",
+    "redis",
+    "docker",
+    "aws",
+    "github actions",
+    "ci/cd",
+    "api rest",
+    "rest api",
+    "nx monorepo",
 ]
 
 TERMOS_BUSCA = TERMOS_CARGO + TERMOS_FERRAMENTA
 
-# Medido: os TERMOS_BUSCA inteiros (hoje 42) rodando em TODO ciclo é o que
+# Rodar todos os TERMOS_BUSCA em TODO ciclo é o que
 # gera as centenas de sessões de navegador por execução — o custo cresce
 # linear com o tamanho da lista, e a lista só cresce (mais ainda com a
 # expansão internacional puxando mais termos no radar). TERMOS_POR_CICLO é
@@ -192,7 +225,7 @@ CIDADES = [
     "Aracaju",
 ]
 
-# MEDIDO: "Data Analyst @ Lisboa" e "Analista de Datos @ Madrid" reprovavam
+# Vagas como "Backend Developer @ Lisboa" reprovam
 # na localização, não no cargo — CIDADES acima é whitelist só de cidade
 # brasileira, e a expansão de LOCATIONS_LINKEDIN pra Argentina/Chile (ver
 # abaixo) passou a trazer vaga presencial/híbrida em Portugal/Espanha de
@@ -290,14 +323,9 @@ INTERVALO_MINUTOS = int(os.getenv("INTERVALO_MINUTOS", 180))
 # limiar notifica na hora (como sempre foi); abaixo disso, fica na fila do
 # digest diário — ver _enviar_digest_diario em main.py.
 #
-# MEDIDO: rodei o score contra as ~305 vagas do jobs.db real que ainda
-# batem as regras atuais. Distribuição: score 4 (2%), 5 (24%), 6 (67%),
-# 7 (5%), 8 (2%) — nada em 9-10 na amostra (exige acertar praticamente
-# todo sinal ao mesmo tempo: cargo forte + ferramenta + senioridade alvo +
-# mercado confirmado). Limiar 7 deixa ~7% imediata e ~93% no digest — bate
-# com o pedido ("vaga de score alto na hora, resto agrupado"); 6 deixava
-# 74% imediata (pouca redução de ruído); 8 deixava só 2% (digest com
-# praticamente tudo, quase nenhuma vaga "excelente" se destacando na hora).
+# Com limiar 7, um cargo forte Júnior/Pleno em mercado confirmado já recebe
+# destaque imediato; títulos sem senioridade informada precisam também citar
+# uma tecnologia central da stack para chegar nesse grupo.
 LIMIAR_DIGEST_IMEDIATO = 7
 
 # Hora UTC em que o digest diário dispara (uma vez por perfil, por dia —

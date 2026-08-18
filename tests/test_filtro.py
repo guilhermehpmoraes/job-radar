@@ -148,29 +148,28 @@ CASOS_COMBINA_COM = [
     # Anti-regressão crítica (mesmo caso do teste de escopo, agora
     # end-to-end): vaga americana sem sigla de estado tem que ser barrada
     # no perfil internacional (que só aceita LATAM/Ibéria).
-    ("seattle-barrada-perfil-intl", "Senior Data Analyst", "Greater Seattle Area", "Remoto", PERFIL_INTL, False),
+    ("seattle-barrada-perfil-intl", "Senior Backend Developer", "Greater Seattle Area", "Remoto", PERFIL_INTL, False),
     # Remota sem mercado declarado: só passa se o TÍTULO afirmar idioma/
     # região (spanish/portuguese/latam/...) — regra adicionada depois que
-    # "Senior Data Analyst" remoto sem relação nenhuma com o mercado
+    # "Senior Backend Developer" remoto sem relação nenhuma com o mercado
     # passava só por não ter nada que a rejeitasse.
-    ("spanish-speaking-sem-mercado-passa", "Spanish Speaking Data Analyst", "Remote", "Remoto", PERFIL_INTL, True),
-    ("data-analyst-latam-passa", "Data Analyst LATAM", "Remote", "Remoto", PERFIL_INTL, True),
-    ("sem-idioma-sem-mercado-barrada", "Senior Data Analyst", "Remote", "Remoto", PERFIL_INTL, False),
+    ("spanish-speaking-sem-mercado-passa", "Spanish Speaking Backend Developer", "Remote", "Remoto", PERFIL_INTL, True),
+    ("fullstack-latam-passa", "Full Stack Developer LATAM", "Remote", "Remoto", PERFIL_INTL, True),
+    ("sem-idioma-sem-mercado-barrada", "Senior Backend Developer", "Remote", "Remoto", PERFIL_INTL, False),
     # Mercado CONFIRMADO no texto dispensa o sinal de idioma no título — o
     # país hispanofalante já é o próprio sinal.
-    ("mercado-confirmado-dispensa-idioma-no-titulo", "Senior Data Analyst", "Remote - Espanha", "Remoto", PERFIL_INTL, True),
+    ("mercado-confirmado-dispensa-idioma-no-titulo", "Senior Backend Developer", "Remote - Espanha", "Remoto", PERFIL_INTL, True),
 
     # Perfil Brasil: cargo e cidade são checados em campos separados
     # (título vs. local) — cidade fora da lista aceita barra mesmo com
     # cargo batendo.
-    ("cidade-fora-da-lista-barrada", "Analista de Dados", "Nova York", "Presencial", PERFIL_BR, False),
+    ("cidade-fora-da-lista-barrada", "Desenvolvedor Full Stack", "Nova York", "Presencial", PERFIL_BR, False),
     ("cargo-fora-do-escopo-barrado", "Vendedor Externo", "Recife, PE", "Presencial", PERFIL_BR, False),
-    ("cargo-forte-cidade-aceita-passa", "Analista de Dados Pleno", "Recife, PE", "Presencial", PERFIL_BR, True),
-    # keywords_ambiguo (ex: "Business Analyst") só conta com qualificador
-    # de dados junto no título — sozinho é ruído de outra área (RH,
-    # finanças).
-    ("cargo-ambiguo-sem-qualificador-barrado", "Business Analyst", "Recife, PE", "Presencial", PERFIL_BR, False),
-    ("cargo-ambiguo-com-qualificador-passa", "Business Analyst com SQL", "Recife, PE", "Presencial", PERFIL_BR, True),
+    ("cargo-forte-cidade-aceita-passa", "Desenvolvedor Full Stack Pleno", "Recife, PE", "Presencial", PERFIL_BR, True),
+    # keywords_ambiguo (ex: "Analista de Sistemas") só conta com
+    # tecnologia/área da stack junto no título.
+    ("cargo-ambiguo-sem-qualificador-barrado", "Analista de Sistemas", "Recife, PE", "Presencial", PERFIL_BR, False),
+    ("cargo-ambiguo-com-qualificador-passa", "Analista de Sistemas Node.js", "Recife, PE", "Presencial", PERFIL_BR, True),
 ]
 
 
@@ -221,7 +220,7 @@ CASOS_PUBLICACAO_ANTIGA = [
 )
 def test_publicacao_antiga(nome, publicado_em, esperado):
     job = Job(
-        titulo="Analista de Dados", empresa="Teste", local="Recife, PE",
+        titulo="Desenvolvedor Full Stack", empresa="Teste", local="Recife, PE",
         link=f"https://teste.invalido/{nome}", site="Teste", modalidade="Presencial",
         publicado_em=publicado_em,
     )
