@@ -154,19 +154,42 @@ TERMOS_BUSCA = TERMOS_CARGO + TERMOS_FERRAMENTA
 # quantos ciclos até cobrir tudo de novo, não o custo de cada ciclo.
 TERMOS_POR_CICLO = 10
 
+# Onde vaga HIBRIDA ou PRESENCIAL e aceita (mais "Remoto", que nao e
+# cidade e sim a porta de entrada da regra de modalidade remota — ver
+# _FLAGS_REMOTO em job.py). Vaga hibrida/presencial fora desta lista e
+# rejeitada; e uma whitelist, nao uma preferencia de ordenacao.
+#
+# Lista revisada contra o requisito escrito pela usuaria: as seis cidades
+# obrigatorias sao Campina Grande, Joao Pessoa, Recife, Natal, Caruaru e
+# Manaus. Maceio e Aracaju ficam por decisao explicita dela (interessam,
+# mesmo fora do requisito minimo).
+#
+# MEDIDO: a lista anterior era "Nordeste", nao "as cidades que interessam",
+# e divergia do requisito nos dois sentidos ao mesmo tempo:
+#   - FALTAVA Manaus. Confirmado em teste: "Manaus - AM" + Hibrido era
+#     REJEITADA. Nenhuma vaga presencial/hibrida de Manaus podia entrar,
+#     e a busca por cidade do LinkedIn (derivada desta lista) nunca
+#     procurou la.
+#   - SOBRAVAM Jaboatao, Teresina, Sao Luis e Petrolina, que aceitavam
+#     hibrida/presencial fora da regra. Confirmado em teste.
+# Nenhum dos 76 testes existentes cobria essas regras — por isso a
+# divergencia sobreviveu. Agora esta em tests/test_regras_de_negocio.py.
+#
+# Custo: LOCATIONS_LINKEDIN_CIDADES_PRESENCIAL e derivada daqui, entao
+# cada cidade e uma busca a mais por termo no LinkedIn. Sai de 11 cidades
+# para 8 — menos requisicao por ciclo E cobrindo Manaus, que faltava.
 CIDADES = [
     "Remoto",
+    # As seis do requisito
     "Campina Grande",
     "João Pessoa",
     "Recife",
     "Natal",
-    "Maceió",
-    "Jaboatão",
-    "Aracaju",
-    "Teresina",
-    "São Luís",
-    "Petrolina",
     "Caruaru",
+    "Manaus",
+    # Mantidas por decisao da usuaria, alem do requisito minimo
+    "Maceió",
+    "Aracaju",
 ]
 
 # MEDIDO: "Data Analyst @ Lisboa" e "Analista de Datos @ Madrid" reprovavam
