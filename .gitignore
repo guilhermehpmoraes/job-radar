@@ -7,4 +7,5 @@ __pycache__/
 data/*.db-journal
 data/*.db-wal
 data/*.db-shm
+data/jobs-local.db
 _to_delete/
