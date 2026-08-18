@@ -153,19 +153,49 @@ def _enviar_digest_diario(perfil: Perfil):
     pelo GitHub Actions naquele dia).
     """
     chave = f"digest_ultimo_dia_{perfil.chave}"
-    hoje = date.today()
     agora = datetime.now(timezone.utc)
+    # Dia em UTC, não date.today() (que é o dia LOCAL da máquina). A hora
+    # comparada logo abaixo é UTC; misturar os dois dava resultado
+    # diferente rodando no GitHub Actions (UTC) e na máquina da usuária
+    # (UTC-3) — no Brasil, entre 21h e meia-noite o "hoje" local já é o
+    # dia anterior ao "hoje" UTC.
+    hoje = agora.date()
 
-    ultimo_envio_str = obter_metadado(chave)
-    se_ja_enviou_hoje = ultimo_envio_str == hoje.isoformat()
-    if se_ja_enviou_hoje:
+    if obter_metadado(chave) == hoje.isoformat():
         return
 
-    horario_certo = agora.hour == DIGEST_HORA_UTC
-    atrasado = ultimo_envio_str is not None and (
-        hoje - date.fromisoformat(ultimo_envio_str)
-    ).days >= 2
-    if not (horario_certo or atrasado):
+    # MEDIDO em produção: o digest NUNCA foi enviado. Prova direta — a
+    # tabela metadados do jobs.db de produção tem heartbeat_ultimo_dia_*
+    # (das duas chaves, atualizadas), e nenhum digest_ultimo_dia_*. O
+    # heartbeat é disparado na linha ANTERIOR a esta função, no mesmo
+    # ciclo: se ele chega e o digest não, a diferença é a condição de
+    # horário. Resultado: 408 vagas presas na fila, acumulando desde que o
+    # recurso existe, sem nunca chegar no Telegram.
+    #
+    # Eram duas causas somadas:
+    #
+    # 1. "agora.hour == DIGEST_HORA_UTC" exige que o ciclo TERMINE dentro
+    #    de uma janela de 1 hora. Mas o cron só COMEÇA às 00:00 UTC e o
+    #    ciclo dura ~80 min (medido pelos commits do robô: a execução das
+    #    00:00 commitou às 02:14). Quando esta função roda, já é 1h ou 2h
+    #    — a janela nunca está aberta.
+    #
+    # 2. A rede de segurança para o caso acima ("se pular um dia, manda no
+    #    ciclo seguinte") exigia ultimo_envio_str is not None, ou seja, um
+    #    envio anterior registrado. Como nunca houve o primeiro, ela nunca
+    #    ligava: dependia exatamente daquilo que deveria consertar.
+    #
+    # A regra agora é "ainda não enviei hoje E já passou da hora
+    # configurada" em vez de "a hora é exatamente X". Isso cobre os dois
+    # casos de uma vez, sem precisar da rede de segurança separada: o
+    # digest sai no PRIMEIRO ciclo do dia UTC que terminar depois de
+    # DIGEST_HORA_UTC, independente de quanto o ciclo demorou ou de o
+    # GitHub Actions ter atrasado o agendamento. Com DIGEST_HORA_UTC = 0,
+    # é o primeiro ciclo de cada dia UTC (~22h de Brasília).
+    #
+    # Continua no máximo 1 por dia: o metadado só é gravado depois do
+    # envio confirmado, e a checagem acima corta o resto do dia.
+    if agora.hour < DIGEST_HORA_UTC:
         return
 
     vagas_pendentes = obter_vagas_pendentes_digest(perfil.chave)
