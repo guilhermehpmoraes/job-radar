@@ -213,6 +213,38 @@ _CIDADES_MERCADO = {
     "guipuzcoa": "Espanha",
     "gipuzkoa": "Espanha",
     "leiria": "Portugal",
+    # MEDIDO no jobradar.log: cidades de pais ACEITO que apareciam como
+    # descarte por escopo, uma a uma, so por nao estarem aqui — "zaragoza",
+    # "braga", "funchal", "elche", "ciudad real", "mendoza", "rosario",
+    # "bucaramanga", "palma de mallorca". Somadas passam de 30 vagas nos
+    # ciclos registrados. Custo de manter a lista maior e zero (so
+    # comparacao de string); o custo de faltar um nome e falso negativo,
+    # que e o erro caro aqui.
+    #
+    # Nome que tambem existe no Brasil (Braga/PB, Rosario/MA, Coimbra/MG)
+    # nao vira risco: a sigla de UF resolve Brasil antes, no laco de
+    # segmentos la em cima, e so chega aqui quando nao ha UF nenhuma junto.
+    "braga": "Portugal",
+    "coimbra": "Portugal",
+    "aveiro": "Portugal",
+    "funchal": "Portugal",
+    "zaragoza": "Espanha",
+    "elche": "Espanha",
+    "ciudad real": "Espanha",
+    "murcia": "Espanha",
+    "alicante": "Espanha",
+    "vigo": "Espanha",
+    "palma de mallorca": "Espanha",
+    "illes balears": "Espanha",
+    "islas baleares": "Espanha",
+    "mendoza": "Argentina",
+    "rosario": "Argentina",
+    "bucaramanga": "Colômbia",
+    "cali": "Colômbia",
+    "barranquilla": "Colômbia",
+    "cartagena": "Colômbia",
+    "valparaiso": "Chile",
+    "arequipa": "Peru",
     "cidade do mexico": "México",
     "ciudad de mexico": "México",
     "guadalajara": "México",
@@ -288,6 +320,26 @@ _PALAVRAS_IGNORAR_ESCOPO = {
 # esse fix inteiro existe pra fechar.
 _PALAVRAS_REGIAO_BR = {"cidade", "cidades", "regiao", "distrito", "condado"}
 
+# MEDIDO em producao (jobradar.log): 179 descartes com escopo "en" — o
+# segundo maior motivo de descarte do projeto, atras so de "Estados
+# Unidos" (que e descarte correto). Vem do formato do LinkedIn em
+# espanhol, "Espana (En remoto)" e "En remoto": depois que
+# _remover_ruido_escopo tira a raiz "remot", sobra a preposicao "en"
+# sozinha como candidato a mercado. Preposicao solta nao e nome de lugar
+# nenhum — e o mesmo caso de "remoto sem escopo declarado", que precisa
+# devolver conjunto vazio (sem restricao), nao um escopo desconhecido que
+# reprova a vaga. Atingia direto o alvo do perfil internacional (vaga
+# remota na Espanha).
+#
+# Usado so pra decidir se o candidato INTEIRO e ruido — as palavras nao
+# sao removidas do meio do texto, de proposito: "de"/"do"/"da" fazem
+# parte de nome de lugar de verdade ("Cidade do Mexico", "Santiago do
+# Cacem"), e remove-las quebraria o casamento com _CIDADES_MERCADO.
+_PALAVRAS_SEM_GEOGRAFIA = {
+    "en", "em", "in", "at", "de", "do", "da", "a", "o", "the",
+    "y", "e", "and", "desde", "para", "no", "na",
+}
+
 # Separador entre a raiz "remot..." e o texto de escopo que vem depois:
 # travessão/hífen ("Remote — US only", "Remote - India"), vírgula ("Remote,
 # United States") ou parênteses ("Remote (Brazil only)"). Sem nenhum desses
@@ -331,6 +383,17 @@ def _remover_ruido_escopo(texto: str) -> str:
     texto = texto.replace(_PLACEHOLDER_LOCAL_AUSENTE, " ")
     texto = texto.replace("(", " ").replace(")", " ")
     return re.sub(r"\s+", " ", texto).strip()
+
+def _limpar_segmento(seg: str) -> str:
+    """Mesma limpeza aplicada ao candidato inteiro (palavra de apoio fora,
+    token sem letra fora), mas por SEGMENTO — e o que permite casar
+    "Medellin Metropolitan Area" -> "medellin" e "4000 Porto" -> "porto"
+    contra _CIDADES_MERCADO, que compara por igualdade."""
+    palavras = [
+        p for p in seg.split()
+        if p not in _PALAVRAS_IGNORAR_ESCOPO and any(c.isalpha() for c in p)
+    ]
+    return " ".join(palavras).strip()
 
 # MEDIDO em produção (jobs.db, fonte LinkedIn): 246 de 269 notificações
 # (91%) vieram no formato "Remoto (Cidade, SIGLA)" — ex: "Remoto (New York,
@@ -539,7 +602,11 @@ def extrair_escopo_remoto(texto_local: str, modalidade: str = "") -> set[str]:
                 return {"Brasil"}
         if seg in _SIGLAS_ESTADOS_EUA:
             return {"Estados Unidos"}
-        if seg in _SIGLAS_ESTADOS_MEXICO:
+        # MEDIDO: "San Luis Potosi, S. L. P." chega como segmento "s l p"
+        # (o ponto ja foi removido, o espaco nao) e nunca batia contra a
+        # forma compacta "slp" do dicionario. Tirar o espaco cobre esse
+        # formato sem afetar sigla que ja vem junta.
+        if seg in _SIGLAS_ESTADOS_MEXICO or seg.replace(" ", "") in _SIGLAS_ESTADOS_MEXICO:
             return {"México"}
 
     # Nome de mercado por extenso também pode vir DEPOIS da cidade, não só
@@ -554,9 +621,15 @@ def extrair_escopo_remoto(texto_local: str, modalidade: str = "") -> set[str]:
     # espanhol na frente vira palavra solta no candidato ("08015 barcelona
     # barcelona"), nunca bate em nenhuma chave. Puramente numérico nunca é
     # nome de mercado, então descarta direto.
+    # MEDIDO: local="100% remoto" resolvia pro escopo {"100%"} — depois de
+    # _remover_ruido_escopo tirar "remoto", sobrava "100%", que nao e digito
+    # puro (tem "%") e por isso sobrevivia ao filtro antigo. Virava "escopo
+    # declarado mas desconhecido" e REPROVAVA uma vaga remota sem restricao
+    # geografica nenhuma. Exigir pelo menos uma letra cobre "100%", codigo
+    # postal ("08015") e qualquer pontuacao solta de uma vez so.
     palavras = [
         p for p in resto.replace(",", " ").split()
-        if p not in _PALAVRAS_IGNORAR_ESCOPO and not p.isdigit()
+        if p not in _PALAVRAS_IGNORAR_ESCOPO and any(c.isalpha() for c in p)
     ]
 
     # MEDIDO: formato espanhol "Cidade, Cidade provincia" (província tem o
@@ -589,10 +662,37 @@ def extrair_escopo_remoto(texto_local: str, modalidade: str = "") -> set[str]:
     # UF junto, que sem isso cairiam direto em _CIDADES_MERCADO e virariam
     # Portugal via "porto" — aqui o candidato já é a cidade inteira, então
     # não tem esse risco de substring.
+    # Candidato feito SO de preposicao/artigo ("en", "em de") nao declara
+    # geografia nenhuma — e remoto sem escopo, nao escopo desconhecido.
+    # Ver _PALAVRAS_SEM_GEOGRAFIA (179 descartes reais com escopo "en").
+    if all(p in _PALAVRAS_SEM_GEOGRAFIA for p in candidato.split()):
+        return set()
+
     if candidato in _CAPITAIS_BRASIL:
         return {"Brasil"}
     if candidato in _CIDADES_MERCADO:
         return {_CIDADES_MERCADO[candidato]}
+
+    # MEDIDO: o casamento acima exige que o candidato INTEIRO seja igual a
+    # chave, entao qualquer formato "Cidade, Provincia" falhava mesmo com a
+    # cidade conhecida. No log real: "mostoles madrid", "alcorcon madrid",
+    # "itziar guipuzcoa", "campanillas malaga", "palma de mallorca illes
+    # balears" — todas em pais que o projeto ACEITA, todas descartadas.
+    # Casar SEGMENTO a segmento (cada pedaco separado por virgula/hifen,
+    # limpo do mesmo ruido) resolve isso sem reabrir o falso positivo que
+    # motivou o casamento por igualdade: continua sendo igualdade, so que
+    # do segmento inteiro. "Porto Alegre" segue sendo o segmento inteiro
+    # "porto alegre", que nao e igual a chave "porto" — nao vira Portugal.
+    #
+    # Capital brasileira antes de _CIDADES_MERCADO, mesma ordem e mesmo
+    # motivo do bloco acima.
+    for seg in (_limpar_segmento(x) for x in segmentos):
+        if not seg:
+            continue
+        if seg in _CAPITAIS_BRASIL:
+            return {"Brasil"}
+        if seg in _CIDADES_MERCADO:
+            return {_CIDADES_MERCADO[seg]}
 
     return _mercados_correspondentes(candidato)
 
