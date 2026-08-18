@@ -192,47 +192,39 @@ TERMOS_POR_CICLO = 10
 # _FLAGS_REMOTO em job.py). Vaga hibrida/presencial fora desta lista e
 # rejeitada; e uma whitelist, nao uma preferencia de ordenacao.
 #
-# Lista revisada contra o requisito escrito pela usuaria: as seis cidades
-# obrigatorias sao Campina Grande, Joao Pessoa, Recife, Natal, Caruaru e
-# Manaus. Maceio e Aracaju ficam por decisao explicita dela (interessam,
-# mesmo fora do requisito minimo).
-#
-# MEDIDO: a lista anterior era "Nordeste", nao "as cidades que interessam",
-# e divergia do requisito nos dois sentidos ao mesmo tempo:
-#   - FALTAVA Manaus. Confirmado em teste: "Manaus - AM" + Hibrido era
-#     REJEITADA. Nenhuma vaga presencial/hibrida de Manaus podia entrar,
-#     e a busca por cidade do LinkedIn (derivada desta lista) nunca
-#     procurou la.
-#   - SOBRAVAM Jaboatao, Teresina, Sao Luis e Petrolina, que aceitavam
-#     hibrida/presencial fora da regra. Confirmado em teste.
-# Nenhum dos 76 testes existentes cobria essas regras — por isso a
-# divergencia sobreviveu. Agora esta em tests/test_regras_de_negocio.py.
-#
-# Custo: LOCATIONS_LINKEDIN_CIDADES_PRESENCIAL e derivada daqui, entao
-# cada cidade e uma busca a mais por termo no LinkedIn. Sai de 11 cidades
-# para 8 — menos requisicao por ciclo E cobrindo Manaus, que faltava.
-CIDADES = [
-    "Remoto",
-    # As seis do requisito
-    "Campina Grande",
-    "João Pessoa",
-    "Recife",
-    "Natal",
-    "Caruaru",
-    "Manaus",
-    # Mantidas por decisao da usuaria, alem do requisito minimo
-    "Maceió",
-    "Aracaju",
+# Nomes canônicos usados tanto no filtro quanto nas buscas específicas do
+# LinkedIn. Cada item aqui gera uma busca adicional por termo.
+CIDADES_PRESENCIAIS = [
+    "Santa Bárbara d'Oeste",
+    "Piracicaba",
+    "Americana",
+    "Campinas",
+    "Nova Odessa",
+    "Sumaré",
 ]
 
-# Vagas como "Backend Developer @ Lisboa" reprovam
-# na localização, não no cargo — CIDADES acima é whitelist só de cidade
-# brasileira, e a expansão de LOCATIONS_LINKEDIN pra Argentina/Chile (ver
-# abaixo) passou a trazer vaga presencial/híbrida em Portugal/Espanha de
-# vez em quando junto. Lista SEPARADA (não misturada em CIDADES, que
-# continua só-Brasil de propósito — ver decisão registrada na criação do
-# config_intl.py) com toggle próprio, pra dar pra ligar/desligar esse eixo
-# sem mexer no resto do filtro. Canônica aqui porque config_intl.py já
+# Grafias alternativas aceitas pelo filtro. Ficam fora das buscas do
+# LinkedIn para não repetir a mesma consulta várias vezes. A normalização já
+# cobre caixa e acentos; estes aliases tratam pontuação, abreviação e a troca
+# de "d'Oeste" por "do Oeste".
+VARIANTES_CIDADES = [
+    "Santa Bárbara do Oeste",
+    "Santa Bárbara d Oeste",
+    "Santa Bárbara dOeste",
+    "Santa Bárbara d’Oeste",
+    "Sta. Bárbara d'Oeste",
+    "Sta Bárbara d'Oeste",
+    "Sta. Bárbara do Oeste",
+    "Sta Bárbara do Oeste",
+]
+
+CIDADES = ["Remoto", *CIDADES_PRESENCIAIS, *VARIANTES_CIDADES]
+
+# Vagas como "Backend Developer @ Lisboa" reprovam na localização, não no
+# cargo — CIDADES acima é whitelist só de cidade brasileira. Esta lista
+# separada permite manter um eixo exploratório presencial em Portugal com
+# toggle próprio, sem misturar cidades estrangeiras no filtro principal.
+# Canônica aqui porque config_intl.py já
 # importa de config.py (não o contrário) — o pipeline internacional reusa
 # essa mesma lista em vez de manter uma cópia (risco de divergir, mesmo
 # motivo da unificação de _contem_termo/_tem_termo).
@@ -241,12 +233,6 @@ CIDADES_EUROPA_IBERICA = [
     "Lisboa",
     "Porto",
     "Braga",
-    "Espanha",
-    "España",
-    "Spain",
-    "Madrid",
-    "Barcelona",
-    "Valencia",
 ]
 
 # Toggle independente do ATIVAR_EIXO_IBERICO de config_intl.py — são dois
@@ -255,7 +241,7 @@ CIDADES_EUROPA_IBERICA = [
 # desliga, mesmo compartilhando a mesma lista de cidades acima.
 #
 # DESLIGADO: do mercado internacional, só interessa vaga remota — vaga
-# presencial/híbrida em Lisboa/Madrid (o que esse eixo notifica, marcada
+# presencial/híbrida em Lisboa/Porto (o que esse eixo notifica, marcada
 # "exploratória") não é o que o usuário quer. CIDADES_EUROPA_IBERICA
 # continua definida (não precisa apagar) pra caso o eixo volte a ser
 # ligado depois — só o toggle muda.
@@ -270,30 +256,23 @@ ATIVAR_EIXO_IBERICO_BR = False
 # porque o usuário mora aqui e vaga local de verdade interessa.
 LOCATIONS_LINKEDIN = ["Brasil"]
 
-# Mercados adicionais: só busca REMOTA (f_WT=2) — vaga presencial/híbrida
-# num país onde o usuário não mora não serve, então nem faz sentido gastar
-# a passada nacional ali (era puro desperdício: Argentina/Chile já rodavam
-# as duas passadas antes, mas a nacional nunca batia em CIDADES mesmo,
-# que é só cidade brasileira). Espanhol ou português — mesmo critério do
-# pipeline internacional. Lista reaproveita exatamente os países já usados
-# e testados ao vivo no endpoint do LinkedIn em config_intl.py
-# (LOCATIONS_INTL) — evita arriscar nome de país nunca testado (grafia
-# errada ou região que o LinkedIn não resolve como location de verdade,
-# como já visto com "LATAM"/"Latin America").
-LOCATIONS_LINKEDIN_REMOTO_APENAS = ["Argentina", "Chile", "México", "Colômbia", "Espanha", "Portugal"]
+# Mercado adicional pesquisado apenas como remoto. Países hispanofalantes
+# foram removidos porque o usuário fala português e inglês; buscar nesses
+# mercados trazia anúncios cuja descrição estava somente em espanhol.
+LOCATIONS_LINKEDIN_REMOTO_APENAS = ["Portugal"]
 
 # MEDIDO: a passada nacional acima (location="Brasil") varre o país inteiro
 # e só sobra o que bate em CIDADES depois do filtro — pra termo concorrido
 # em SP/RJ/MG (a maioria), as 3 páginas (30 resultados) nunca chegam numa
 # vaga de cidade menor do Nordeste, porque o volume dos polos maiores
-# ocupa tudo antes. Testado ao vivo: página 1 de "analista de dados" em
+# ocupa tudo antes. Em termos concorridos como "backend developer", a
 # Brasil inteiro veio 100% São Paulo/Curitiba/Brasília, nenhuma do
 # Nordeste. Busca ESPECÍFICA por cidade não depende de volume nacional —
 # o próprio location= do LinkedIn já restringe o resultado à cidade, então
 # funciona mesmo quando SP/RJ dominam o termo. "Remoto" (item de CIDADES)
 # não é local de busca de verdade — sai da lista, já coberto pela passada
 # remoto=True de LOCATIONS_LINKEDIN acima.
-LOCATIONS_LINKEDIN_CIDADES_PRESENCIAL = [c for c in CIDADES if c != "Remoto"]
+LOCATIONS_LINKEDIN_CIDADES_PRESENCIAL = CIDADES_PRESENCIAIS
 
 # Mercado que a vaga remota precisa aceitar pra contar, quando o texto de
 # local DECLARA um escopo geográfico ("Remote — US only", "Remote — India").
@@ -303,19 +282,10 @@ LOCATIONS_LINKEDIN_CIDADES_PRESENCIAL = [c for c in CIDADES if c != "Remoto"]
 # maioria) continua batendo normalmente, isso só filtra quando a fonte
 # EXPLICITA um mercado incompatível.
 #
-# MEDIDO: Argentina/Chile/México/Colômbia ENTRAM nominalmente agora — a
-# suposição de que "LATAM" cobria os quatro como guarda-chuva só valia
-# enquanto extrair_escopo_remoto resolvia o texto pra "LATAM" literal.
-# Depois que passou a reconhecer cidade (Buenos Aires/Santiago/Cidade do
-# México/Bogotá — ver _CIDADES_MERCADO em job.py), o escopo passou a
-# resolver pro PAÍS específico, não mais pro guarda-chuva — e o país
-# específico nunca esteve nessa lista. Resultado: LOCATIONS_LINKEDIN_
-# REMOTO_APENAS pagava o custo de buscar nesses 4 países e o filtro
-# descartava tudo que a busca trazia de lá. "LATAM" continua na lista pra
-# quando o texto disser isso literalmente (guarda-chuva de verdade, não
-# substituto de nome de país). Portugal e Espanha entraram nominalmente
-# pelo mesmo motivo, desde antes.
-MERCADOS_REMOTO_ACEITOS = ["Brasil", "LATAM", "Argentina", "Chile", "México", "Colômbia", "Portugal", "Espanha"]
+# Escopo remoto explícito aceito no perfil Brasil. LATAM e países
+# hispanofalantes ficam fora para impedir que uma busca brasileira aprove
+# novamente vagas direcionadas ao mercado espanhol.
+MERCADOS_REMOTO_ACEITOS = ["Brasil", "Portugal"]
 
 INTERVALO_MINUTOS = int(os.getenv("INTERVALO_MINUTOS", 180))
 

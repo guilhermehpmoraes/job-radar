@@ -93,8 +93,8 @@ class Perfil:
     max_scrapers_concorrentes: int = 4
 
 
-# Regra primária: cidade brasileira (Nordeste) ou "Remoto" com mercado
-# Brasil/LATAM/Portugal/Espanha aceito (ver Job.escopo_remoto).
+# Regra primária: cidade brasileira configurada ou "Remoto" com mercado
+# Brasil/Portugal aceito (ver Job.escopo_remoto).
 _REGRAS_BR = RegrasFiltro(
     keywords_forte=KEYWORDS_CARGO_FORTE,
     keywords_ambiguo=KEYWORDS_CARGO_AMBIGUO,
@@ -105,7 +105,7 @@ _REGRAS_BR = RegrasFiltro(
     mercados_remoto_aceitos=MERCADOS_REMOTO_ACEITOS,
 )
 
-# Eixo secundário (Ibéria): mesma regra de cargo, cidade europeia em vez de
+# Eixo secundário (Portugal): mesma regra de cargo, cidade europeia em vez de
 # brasileira. DESLIGADO — ver ATIVAR_EIXO_IBERICO_BR em config.py: usuário só
 # quer vaga remota do mercado internacional, não presencial/híbrida em
 # Lisboa/Madrid. Continua definido (não apagado) pra religar fácil depois.
@@ -169,7 +169,7 @@ PERFIL_BR = Perfil(
     regras=_REGRAS_BR,
     regras_eixo_secundario=_REGRAS_BR_IBERIA,
     eixo_secundario_ativo=ATIVAR_EIXO_IBERICO_BR,
-    eixo_secundario_rotulo="Ibéria",
+    eixo_secundario_rotulo="Portugal",
     termos_busca=TERMOS_BUSCA,
     termos_por_ciclo=TERMOS_POR_CICLO,
     definicao_scrapers=_SCRAPERS_BR,
@@ -178,11 +178,11 @@ PERFIL_BR = Perfil(
 
 
 # Regra primária: só remoto ("Remote"/"Remoto" em CIDADES_INTL), mercado
-# LATAM/Portugal/Espanha aceito. Sem cargo ambíguo neste perfil; as mesmas
+# lusófono aceito. Sem cargo ambíguo neste perfil; as mesmas
 # tecnologias centrais do perfil BR entram no score e também podem confirmar
 # títulos de desenvolvimento baseados na stack.
 #
-# idiomas_exigidos: sem mercado declarado, exige espanhol/português/LATAM
+# idiomas_exigidos: sem mercado declarado, exige português ou inglês
 # no título (ver IDIOMAS_EXIGIDOS_INTL e comentário em RegrasFiltro) — a
 # busca já tentava garantir isso via termo, mas nunca era reconferido na
 # vaga em si.
@@ -197,7 +197,7 @@ _REGRAS_INTL = RegrasFiltro(
     idiomas_exigidos=IDIOMAS_EXIGIDOS_INTL,
 )
 
-# Eixo secundário (Ibéria): vaga presencial/híbrida em Portugal/Espanha,
+# Eixo secundário: vaga presencial/híbrida em Portugal,
 # achada de propósito (LOCATIONS_INTL busca lá) mas que CIDADES_INTL (só
 # remoto) rejeitaria. DESLIGADO — mesmo motivo do eixo BR acima.
 _REGRAS_INTL_IBERIA = RegrasFiltro(
@@ -226,7 +226,7 @@ PERFIL_INTL = Perfil(
     regras=_REGRAS_INTL,
     regras_eixo_secundario=_REGRAS_INTL_IBERIA,
     eixo_secundario_ativo=ATIVAR_EIXO_IBERICO,
-    eixo_secundario_rotulo="Ibéria",
+    eixo_secundario_rotulo="Portugal",
     termos_busca=TERMOS_BUSCA_INTL,
     termos_por_ciclo=TERMOS_POR_CICLO_INTL,
     definicao_scrapers=_SCRAPERS_INTL,

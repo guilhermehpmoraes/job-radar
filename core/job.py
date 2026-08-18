@@ -165,11 +165,10 @@ _MERCADOS_REMOTO = {
     "europe": "Europa",
     "europa": "Europa",
     "emea": "EMEA",
-    # Resto dos países hispanofalantes/lusófonos que MERCADOS_REMOTO_ACEITOS_INTL
-    # passou a aceitar — sem entrada aqui, "Remote - Peru"/"Remote - Uruguay"
-    # cai no mesmo "mercado não mapeado" que qualquer país não aceito (ver
-    # comentário em _mercado_correspondente), e nunca bateria contra a lista
-    # aceita mesmo sendo um país que o projeto quer aceitar.
+    # Outros países reconhecidos pelo extrator. Eles continuam no mapa mesmo
+    # quando não estão na allowlist atual: reconhecer explicitamente o mercado
+    # é justamente o que permite rejeitá-lo em vez de tratá-lo como remoto sem
+    # restrição geográfica.
     "peru": "Peru",
     "uruguay": "Uruguai",
     "uruguai": "Uruguai",
@@ -217,7 +216,7 @@ _MERCADOS_REMOTO = {
 # E na Espanha; San José é capital da Costa Rica mas também cidade nos
 # EUA) — sem base geográfica de verdade não dá pra resolver isso com
 # certeza; a escolha abaixo é a leitura mais provável dado o escopo do
-# projeto (mercado hispanofalante/lusófono), não uma garantia.
+# histórico de mercados do projeto, não uma garantia.
 _CIDADES_MERCADO = {
     "lisboa": "Portugal",
     "lisbon": "Portugal",  # grafia inglesa, comum em card do LinkedIn
@@ -826,21 +825,17 @@ class RegrasFiltro:
     # Lista vazia é diferente de None: significa "só aceita remoto SEM
     # escopo declarado", rejeitando todo mercado explícito.
     mercados_remoto_aceitos: list[str] | None = None
-    # MEDIDO: perfil internacional não exigia espanhol/português na vaga em
-    # si — só nos TERMOS de busca (ex: "backend developer spanish speaker"),
-    # que nunca eram checados de novo depois. Uma vaga genérica de software
-    # remoto e sem mercado declarado passava sem nenhuma relação
-    # com o idioma, porque o resultado bateu no termo de busca (que casa
-    # contra o anúncio inteiro, não só o título que a gente guarda) sem que
-    # "spanish"/"portuguese"/"latam" apareça em nada que sobra depois.
+    # Idiomas exigidos precisam ser reconfirmados no dado que o radar guarda,
+    # porque o termo de busca pode ter casado apenas com a descrição completa
+    # indexada pelo portal. Sem essa etapa, uma vaga remota sem mercado
+    # declarado poderia passar sem qualquer sinal do idioma no título.
     #
     # Mesma lógica de keywords_ambiguo (cargo ambíguo só conta com
-    # qualificador junto): quando o escopo já é um país que fala espanhol/
-    # português (ver mercados_remoto_aceitos), o PAÍS é o próprio sinal de
-    # idioma — não precisa achar a palavra no título também. Só entra em
+    # qualificador junto): quando o escopo já é um mercado aceito, o PAÍS é
+    # o próprio sinal — não precisa achar a palavra no título também. Só entra em
     # jogo quando a vaga é remota SEM mercado declarado (escopo vazio, não
     # tem como saber o país), aí sim o título precisa mencionar idioma/
-    # mercado hispanofalante-lusófono explicitamente. None = não checa
+    # um dos idiomas configurados explicitamente. None = não checa
     # (BR não precisa — fonte já é 100% brasileira/portuguesa).
     idiomas_exigidos: list[str] | None = None
 
@@ -1162,10 +1157,10 @@ class Job:
                     bate_remoto = False
 
         # Vaga de software remota, sem mercado declarado, não pode passar sem
-        # nenhuma relação explícita com espanhol/português —
+        # relação explícita com um dos idiomas configurados —
         # a exigência de idioma vivia só no termo de busca, nunca era
         # reconferida aqui. Análogo a keywords_ambiguo: escopo que já é
-        # país hispanofalante/lusófono aceito É o sinal de idioma (não
+        # mercado aceito funciona como sinal suficiente (não
         # passa por aqui de novo — se bate_remoto sobreviveu ao gate
         # acima com escopos não-vazio, é porque já bateu um mercado
         # aceito). Só entra em jogo quando escopos está vazio (remoto sem

@@ -147,29 +147,32 @@ def test_extrair_escopo_remoto(nome, local, modalidade, esperado):
 CASOS_COMBINA_COM = [
     # Anti-regressão crítica (mesmo caso do teste de escopo, agora
     # end-to-end): vaga americana sem sigla de estado tem que ser barrada
-    # no perfil internacional (que só aceita LATAM/Ibéria).
+    # no perfil internacional (que só aceita mercados lusófonos).
     ("seattle-barrada-perfil-intl", "Senior Backend Developer", "Greater Seattle Area", "Remoto", PERFIL_INTL, False),
     # Remota sem mercado declarado: só passa se o TÍTULO afirmar idioma/
-    # região (spanish/portuguese/latam/...) — regra adicionada depois que
+    # idioma (português/inglês) — regra adicionada depois que
     # "Senior Backend Developer" remoto sem relação nenhuma com o mercado
     # passava só por não ter nada que a rejeitasse.
-    ("spanish-speaking-sem-mercado-passa", "Spanish Speaking Backend Developer", "Remote", "Remoto", PERFIL_INTL, True),
-    ("fullstack-latam-passa", "Full Stack Developer LATAM", "Remote", "Remoto", PERFIL_INTL, True),
+    ("english-speaking-sem-mercado-passa", "English Speaking Backend Developer", "Remote", "Remoto", PERFIL_INTL, True),
+    ("portuguese-speaking-sem-mercado-passa", "Portuguese Speaking Backend Developer", "Remote", "Remoto", PERFIL_INTL, True),
+    ("spanish-speaking-sem-mercado-barrada", "Spanish Speaking Backend Developer", "Remote", "Remoto", PERFIL_INTL, False),
+    ("fullstack-latam-barrada", "Full Stack Developer LATAM", "Remote", "Remoto", PERFIL_INTL, False),
     ("sem-idioma-sem-mercado-barrada", "Senior Backend Developer", "Remote", "Remoto", PERFIL_INTL, False),
-    # Mercado CONFIRMADO no texto dispensa o sinal de idioma no título — o
-    # país hispanofalante já é o próprio sinal.
-    ("mercado-confirmado-dispensa-idioma-no-titulo", "Senior Backend Developer", "Remote - Espanha", "Remoto", PERFIL_INTL, True),
+    # Mercado lusófono confirmado dispensa idioma no título; mercado
+    # hispanofalante continua barrado.
+    ("mercado-lusofono-dispensa-idioma", "Senior Backend Developer", "Remote - Portugal", "Remoto", PERFIL_INTL, True),
+    ("mercado-espanhol-barrado", "Senior Backend Developer", "Remote - Argentina", "Remoto", PERFIL_INTL, False),
 
     # Perfil Brasil: cargo e cidade são checados em campos separados
     # (título vs. local) — cidade fora da lista aceita barra mesmo com
     # cargo batendo.
     ("cidade-fora-da-lista-barrada", "Desenvolvedor Full Stack", "Nova York", "Presencial", PERFIL_BR, False),
-    ("cargo-fora-do-escopo-barrado", "Vendedor Externo", "Recife, PE", "Presencial", PERFIL_BR, False),
-    ("cargo-forte-cidade-aceita-passa", "Desenvolvedor Full Stack Pleno", "Recife, PE", "Presencial", PERFIL_BR, True),
+    ("cargo-fora-do-escopo-barrado", "Vendedor Externo", "Campinas, SP", "Presencial", PERFIL_BR, False),
+    ("cargo-forte-cidade-aceita-passa", "Desenvolvedor Full Stack Pleno", "Campinas, SP", "Presencial", PERFIL_BR, True),
     # keywords_ambiguo (ex: "Analista de Sistemas") só conta com
     # tecnologia/área da stack junto no título.
-    ("cargo-ambiguo-sem-qualificador-barrado", "Analista de Sistemas", "Recife, PE", "Presencial", PERFIL_BR, False),
-    ("cargo-ambiguo-com-qualificador-passa", "Analista de Sistemas Node.js", "Recife, PE", "Presencial", PERFIL_BR, True),
+    ("cargo-ambiguo-sem-qualificador-barrado", "Analista de Sistemas", "Campinas, SP", "Presencial", PERFIL_BR, False),
+    ("cargo-ambiguo-com-qualificador-passa", "Analista de Sistemas Node.js", "Campinas, SP", "Presencial", PERFIL_BR, True),
 ]
 
 

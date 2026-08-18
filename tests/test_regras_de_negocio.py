@@ -1,21 +1,31 @@
 """Regras de negocio da usuaria, escritas como teste executavel.
 
 Estas regras foram definidas por escrito e sao a especificacao do que o
-JobRadar deve ou nao notificar. Ate aqui elas viviam so no config.py -- e
-a lista CIDADES tinha divergido em dois sentidos ao mesmo tempo (faltava
-Manaus, sobravam quatro cidades fora da regra) sem que nenhum dos 76
-testes existentes percebesse.
+JobRadar deve ou nao notificar. A lista de cidades presenciais e hibridas
+fica coberta aqui para qualquer alteracao futura quebrar o teste em vez de
+mudar silenciosamente o comportamento em producao.
 
 Regra, resumida:
   BRASIL   -> remoto de qualquer lugar do pais;
               hibrido/presencial SO nas cidades de CIDADES.
-  EXTERIOR -> SO remoto, e so em mercado de lingua portuguesa/espanhola.
-              Nunca hibrido, nunca presencial, nunca mercado de lingua
-              inglesa.
+  EXTERIOR -> SO remoto, em mercado lusofono; sem mercado declarado,
+              exige portugues ou ingles no titulo. Nunca hibrido/presencial.
 """
 
 import pytest
 
+from core.config import (
+    LOCATIONS_LINKEDIN_CIDADES_PRESENCIAL,
+    LOCATIONS_LINKEDIN_REMOTO_APENAS,
+    MERCADOS_REMOTO_ACEITOS,
+)
+from core.config_intl import (
+    DOMINIOS_INDEED_INTL,
+    KEYWORDS_INTL,
+    LOCATIONS_INTL,
+    MERCADOS_REMOTO_ACEITOS_INTL,
+    TERMOS_BUSCA_INTL,
+)
 from core.job import Job
 from core.perfis import PERFIL_BR, PERFIL_INTL
 
@@ -28,11 +38,10 @@ def _vaga(titulo, local, modalidade):
     )
 
 
-# As seis cidades obrigatorias do requisito, mais as duas mantidas por
-# decisao explicita da usuaria (Maceio e Aracaju).
+# Cidades aceitas para vagas presenciais e híbridas.
 CIDADES_ACEITAS = [
-    "Campina Grande", "João Pessoa", "Recife", "Natal", "Caruaru",
-    "Manaus", "Maceió", "Aracaju",
+    "Santa Bárbara d'Oeste", "Piracicaba", "Americana", "Campinas",
+    "Nova Odessa", "Sumaré",
 ]
 
 
@@ -41,20 +50,36 @@ CIDADES_ACEITAS = [
 @pytest.mark.parametrize("modalidade", ["Híbrido", "Presencial"])
 @pytest.mark.parametrize("cidade", CIDADES_ACEITAS)
 def test_br_hibrido_e_presencial_nas_cidades_aceitas(cidade, modalidade):
-    assert _vaga("Desenvolvedor Full Stack", f"{cidade} - PB", modalidade).combina_com(PERFIL_BR.regras)
+    assert _vaga("Desenvolvedor Full Stack", cidade, modalidade).combina_com(PERFIL_BR.regras)
 
 
 # Variacoes de escrita que as fontes realmente usam -- separador, acento e
 # caixa nao podem mudar o resultado.
 @pytest.mark.parametrize("local", [
-    "Campina Grande", "Campina Grande - PB", "Campina Grande, PB",
-    "Campina Grande/PB", "CAMPINA GRANDE - PB", "campina grande, pb",
-    "João Pessoa - PB", "Joao Pessoa - PB",
-    "Manaus - AM", "Manaus, AM", "Manaus/AM",
-    "Recife - PE", "Caruaru, PE", "Natal/RN",
+    "Piracicaba - SP", "Americana/SP", "Campinas, SP",
+    "Nova Odessa - SP", "Sumaré - SP", "Sumare/SP",
 ])
 def test_br_variacoes_de_escrita_da_cidade(local):
     assert _vaga("Desenvolvedor Full Stack", local, "Híbrido").combina_com(PERFIL_BR.regras)
+
+
+@pytest.mark.parametrize("local", [
+    "Santa Bárbara d'Oeste - SP",
+    "Santa Barbara D'Oeste, SP",
+    "Santa Bárbara do Oeste/SP",
+    "Santa Barbara d Oeste - SP",
+    "Santa Bárbara dOeste, SP",
+    "Santa Bárbara d’Oeste - SP",
+    "Sta. Bárbara d'Oeste - SP",
+    "Sta Barbara do Oeste, SP",
+])
+def test_br_variacoes_de_santa_barbara_doeste(local):
+    assert _vaga("Desenvolvedor Full Stack", local, "Presencial").combina_com(PERFIL_BR.regras)
+
+
+def test_linkedin_busca_so_nomes_canonicos_das_cidades():
+    assert "Santa Bárbara d'Oeste" in LOCATIONS_LINKEDIN_CIDADES_PRESENCIAL
+    assert "Santa Bárbara do Oeste" not in LOCATIONS_LINKEDIN_CIDADES_PRESENCIAL
 
 
 @pytest.mark.parametrize("modalidade", ["Híbrido", "Presencial"])
@@ -62,8 +87,10 @@ def test_br_variacoes_de_escrita_da_cidade(local):
     "São Paulo - SP", "Belo Horizonte, MG", "Salvador - BA",
     "Rio de Janeiro, RJ", "Curitiba - PR", "Brasília, DF",
     "Fortaleza - CE", "Porto Alegre - RS",
-    # Estavam em CIDADES por engano e aceitavam hibrida/presencial
-    # fora da regra -- ver MEDIDO em config.py.
+    # Cidades removidas da whitelist por decisão explícita do usuário.
+    "Campina Grande - PB", "João Pessoa - PB", "Recife - PE",
+    "Natal - RN", "Caruaru - PE", "Manaus - AM", "Maceió - AL",
+    "Aracaju - SE",
     "Jaboatão dos Guararapes - PE", "Teresina - PI",
     "São Luís - MA", "Petrolina - PE",
 ])
@@ -83,7 +110,8 @@ def test_br_remoto_no_brasil_e_aceito_de_qualquer_cidade(local):
 
 @pytest.mark.parametrize("local", [
     "Remote - US only", "Remote, United States", "Remote (Austin, TX)",
-    "Remote - India",
+    "Remote - India", "Remote - Argentina", "Remote - Spain",
+    "Remote - LATAM",
 ])
 def test_br_remoto_de_mercado_nao_aceito_e_rejeitado(local):
     assert not _vaga("Desenvolvedor Full Stack", local, "Remoto").combina_com(PERFIL_BR.regras)
@@ -92,12 +120,20 @@ def test_br_remoto_de_mercado_nao_aceito_e_rejeitado(local):
 # --------------------------------------------------------- INTERNACIONAL
 
 @pytest.mark.parametrize("local", [
-    "Remote - Spain", "Madrid, Spain", "España (En remoto)",
-    "Remote - Mexico", "Ciudad de México, México", "Remote - Portugal",
-    "Remote - Latin America", "Remote - Colombia", "Buenos Aires, Argentina",
+    "Remote - Portugal", "Remote - Angola", "Remote - Mozambique",
+    "Remote - Cape Verde",
 ])
 def test_intl_remoto_em_mercado_aceito_e_aceito(local):
     assert _vaga("Full Stack Developer", local, "Remoto").combina_com(PERFIL_INTL.regras)
+
+
+@pytest.mark.parametrize("local", [
+    "Remote - Spain", "Madrid, Spain", "España (En remoto)",
+    "Remote - Mexico", "Ciudad de México, México", "Remote - Colombia",
+    "Buenos Aires, Argentina", "Remote - Chile", "Remote - Latin America",
+])
+def test_intl_remoto_em_mercado_hispanofalante_e_rejeitado(local):
+    assert not _vaga("Full Stack Developer", local, "Remoto").combina_com(PERFIL_INTL.regras)
 
 
 @pytest.mark.parametrize("modalidade", ["Híbrido", "Presencial"])
@@ -106,8 +142,8 @@ def test_intl_remoto_em_mercado_aceito_e_aceito(local):
     "Ciudad de México, México", "Buenos Aires, Argentina",
 ])
 def test_intl_hibrido_e_presencial_sempre_rejeitado(local, modalidade):
-    """Do exterior so interessa vaga remota -- nem mesmo em Portugal ou
-    Espanha vale presencial/hibrida."""
+    """Do exterior so interessa vaga remota -- nem Portugal vale
+    presencial/hibrida."""
     assert not _vaga("Full Stack Developer", local, modalidade).combina_com(PERFIL_INTL.regras)
 
 
@@ -131,8 +167,20 @@ def test_intl_titulo_hibrido_vence_a_classificacao_da_fonte():
 def test_intl_remoto_sem_mercado_declarado_exige_idioma_no_titulo():
     """Sem pais declarado nao da pra saber o mercado -- ai o titulo precisa
     dizer o idioma. Sem nenhum dos dois sinais, a vaga nao entra."""
-    assert _vaga("Full Stack Developer (Spanish speaker)", "Remote - Worldwide", "Remoto").combina_com(PERFIL_INTL.regras)
+    assert _vaga("Full Stack Developer (Portuguese speaker)", "Remote - Worldwide", "Remoto").combina_com(PERFIL_INTL.regras)
+    assert _vaga("Full Stack Developer (English speaking)", "Remote - Worldwide", "Remoto").combina_com(PERFIL_INTL.regras)
+    assert not _vaga("Full Stack Developer (Spanish speaker)", "Remote - Worldwide", "Remoto").combina_com(PERFIL_INTL.regras)
     assert not _vaga("Full Stack Developer", "Remote - Worldwide", "Remoto").combina_com(PERFIL_INTL.regras)
+
+
+def test_fontes_e_termos_nao_buscam_mercado_espanhol():
+    assert LOCATIONS_LINKEDIN_REMOTO_APENAS == ["Portugal"]
+    assert MERCADOS_REMOTO_ACEITOS == ["Brasil", "Portugal"]
+    assert LOCATIONS_INTL == ["Portugal"]
+    assert DOMINIOS_INDEED_INTL == {"Portugal": "pt.indeed.com"}
+    assert set(MERCADOS_REMOTO_ACEITOS_INTL) == {"Portugal", "Angola", "Moçambique", "Cabo Verde"}
+    assert not any("spanish" in termo or "latam" in termo for termo in TERMOS_BUSCA_INTL)
+    assert not any("desarroll" in keyword.lower() for keyword in KEYWORDS_INTL)
 
 
 # ------------------------------------------------------------------ CARGO
@@ -153,4 +201,4 @@ def test_intl_remoto_sem_mercado_declarado_exige_idioma_no_titulo():
     ("Analista de Dados", False),                # perfil antigo removido
 ])
 def test_cargo_no_titulo(titulo, esperado):
-    assert _vaga(titulo, "Recife - PE", "Presencial").combina_com(PERFIL_BR.regras) is esperado
+    assert _vaga(titulo, "Campinas - SP", "Presencial").combina_com(PERFIL_BR.regras) is esperado
