@@ -286,4 +286,29 @@ DIGEST_HORA_UTC = 0
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "data", "jobs.db")
+# Caminho ancorado na RAIZ do projeto, não na pasta deste arquivo.
+#
+# MEDIDO: o commit b8227b0 ("Reorganiza raiz: ... -> core/") moveu este
+# config.py da raiz pra core/. Como DB_PATH era relativo a __file__, o
+# banco se mudou junto, em silêncio: data/jobs.db virou core/data/jobs.db.
+# Efeito real, confirmado em disco e no jobradar.log:
+#   - data/jobs.db (1.080 vagas, versionado) ficou órfão;
+#   - core/data/jobs.db nasceu vazio, então iniciar_db() passou a abortar
+#     por BancoVazioSuspeito em toda execução local;
+#   - no GitHub Actions a pasta core/data/ não existe no repositório, então
+#     o banco era recriado do zero a cada run — toda vaga virava "nova"
+#     (renotificação a cada 3h), o rodízio de termos travava no offset 0
+#     (só os 10 primeiros de 44 termos eram buscados), a fila do digest era
+#     descartada e o heartbeat saía a cada ciclo em vez de 1x/dia;
+#   - o passo "git add data/jobs.db" do workflow não via mudança nenhuma
+#     ("Nada novo pra commitar"), então o estado nunca mais persistiu.
+#
+# _RAIZ_PROJETO sobe um nível a partir de core/, então o caminho deixa de
+# depender de onde este arquivo mora — mover config.py de novo não move
+# mais o banco junto. Coberto por tests/test_db_path.py, pra uma
+# reorganização futura quebrar o teste em vez da produção.
+#
+# JOBRADAR_DB_PATH existe pra apontar um banco descartável em teste/
+# experimento sem risco de escrever no banco real.
+_RAIZ_PROJETO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_PATH = os.getenv("JOBRADAR_DB_PATH") or os.path.join(_RAIZ_PROJETO, "data", "jobs.db")
