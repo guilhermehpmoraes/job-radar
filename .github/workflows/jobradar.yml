@@ -1,10 +1,10 @@
 name: JobRadar
 
 on:
-  schedule:
-    # Uma vez por hora, fora do minuto 0 (horário de maior congestionamento
-    # dos runners agendados do GitHub Actions).
-    - cron: "17 * * * *"
+  # schedule:
+  #   # Uma vez por hora, fora do minuto 0 (horário de maior congestionamento
+  #   # dos runners agendados do GitHub Actions).
+  #   - cron: "17 * * * *"
   workflow_dispatch: {}
 
 concurrency:
